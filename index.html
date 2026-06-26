@@ -115,6 +115,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     // a null origin, so crossorigin forces a CORS fetch that SRI then rejects.
     // The manifest bytes are ours; SRI protects against CDN compromise, not this.
     template = template.replace(/\s+integrity="[^"]*"/gi, '').replace(/\s+crossorigin="[^"]*"/gi, '');
+    // Rename src="{{ ... }}" to sc-camel-src="{{ ... }}" so the browser won't fetch
+    // the literal template expression before the dc-runtime resolves bindings.
+    // The dc-runtime maps sc-camel-* attributes back to their camelCase names,
+    // so sc-camel-src becomes src in the rendered output.
+    template = template.replace(/ src="(\{\{[^"]*\}\})"/g, ' sc-camel-src="$1"');
 
     const resourceScript = '<script>window.__resources = ' +
       JSON.stringify(resourceMap).split('</' + 'script>').join('<\\/' + 'script>') +
