@@ -1,3 +1,11 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: unknown
+last_updated: "2026-06-26T00:32:54.316Z"
+---
+
 # State — MS Bauconsult Website
 
 ## Current Phase
@@ -8,6 +16,7 @@
 ## Last Action
 
 Phase 1 vollständig abgeschlossen (2026-06-26):
+
 - Bilder lokalisiert via `node localize-images.mjs`
 - Kontaktformular auf Web3Forms umgestellt
 - Cookie-Richtlinie bereinigt
