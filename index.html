@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             && (value.indexOf('"') !== -1 || value.indexOf('%22') !== -1)) {
           for (var id in blobUrls) {
             if (value.indexOf(id) !== -1) {
-              return origSetAttr.call(this, name, 'data:application/javascript;,');
+              return origSetAttr.call(this, name, blobUrls[id]);
             }
           }
         }
