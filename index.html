@@ -18,6 +18,7 @@
       This page requires JavaScript to display.
     </div>
   </noscript>
+  <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function(){});</script>
   <script src="assets/react.production.min.js"></script>
   <script src="assets/react-dom.production.min.js"></script>
 </head>
@@ -101,19 +102,30 @@ document.addEventListener('DOMContentLoaded', async function() {
       }
     }));
 
-    // Framer's runtime fetches asset UUIDs as CDN URLs but mis-encodes them
-    // with JSON quote chars (%22UUID%22). Redirect those to the inline blob
-    // URLs so the runtime gets valid JS without hitting the network.
-    const _origFetch = window.fetch;
-    window.fetch = function(url, init) {
-      var u = typeof url === 'string' ? url : '';
-      if (u.indexOf('"') !== -1 || u.indexOf('%22') !== -1) {
-        for (var id in blobUrls) {
-          if (u.indexOf(id) !== -1) return _origFetch.call(this, blobUrls[id], init);
+    // Framer's runtime overwrites window.fetch during its own init, discarding
+    // a plain assignment. Use defineProperty so our UUID interception persists:
+    // any reassignment to window.fetch updates currentFetch (the inner target)
+    // while the intercepting wrapper stays in the getter.
+    (function() {
+      var nativeFetch = window.fetch;
+      var currentFetch = nativeFetch;
+      function intercepted(url, init) {
+        var u = typeof url === 'string' ? url : (url && (url.href || url.url)) || '';
+        if (u.indexOf('"') !== -1 || u.indexOf('%22') !== -1) {
+          for (var id in blobUrls) {
+            if (u.indexOf(id) !== -1) return nativeFetch.call(this, blobUrls[id], init);
+          }
         }
+        return currentFetch.apply(this, arguments);
       }
-      return _origFetch.apply(this, arguments);
-    };
+      try {
+        Object.defineProperty(window, 'fetch', {
+          get: function() { return intercepted; },
+          set: function(fn) { currentFetch = fn; },
+          configurable: true
+        });
+      } catch(e) { window.fetch = intercepted; }
+    })();
 
     const extResEl = document.querySelector('script[type="__bundler/ext_resources"]');
     const extResources = extResEl ? JSON.parse(extResEl.textContent) : [];
