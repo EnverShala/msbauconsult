@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const _origFetch = window.fetch;
     window.fetch = function(url, init) {
       var u = typeof url === 'string' ? url : '';
-      if (u.indexOf('%22') !== -1) {
+      if (u.indexOf('"') !== -1 || u.indexOf('%22') !== -1) {
         for (var id in blobUrls) {
           if (u.indexOf(id) !== -1) return _origFetch.call(this, blobUrls[id], init);
         }
