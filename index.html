@@ -101,6 +101,20 @@ document.addEventListener('DOMContentLoaded', async function() {
       }
     }));
 
+    // Framer's runtime fetches asset UUIDs as CDN URLs but mis-encodes them
+    // with JSON quote chars (%22UUID%22). Redirect those to the inline blob
+    // URLs so the runtime gets valid JS without hitting the network.
+    const _origFetch = window.fetch;
+    window.fetch = function(url, init) {
+      var u = typeof url === 'string' ? url : '';
+      if (u.indexOf('%22') !== -1) {
+        for (var id in blobUrls) {
+          if (u.indexOf(id) !== -1) return _origFetch.call(this, blobUrls[id], init);
+        }
+      }
+      return _origFetch.apply(this, arguments);
+    };
+
     const extResEl = document.querySelector('script[type="__bundler/ext_resources"]');
     const extResources = extResEl ? JSON.parse(extResEl.textContent) : [];
     const resourceMap = {};
