@@ -101,29 +101,23 @@ document.addEventListener('DOMContentLoaded', async function() {
       }
     }));
 
-    // Framer's runtime overwrites window.fetch during its own init, discarding
-    // a plain assignment. Use defineProperty so our UUID interception persists:
-    // any reassignment to window.fetch updates currentFetch (the inner target)
-    // while the intercepting wrapper stays in the getter.
+    // The runtime creates a <script> element and calls el.setAttribute('src', '"UUID/"')
+    // — UUID wrapped in JSON quote chars — then appends it to <head>. The browser
+    // triggers an implicit GET for that src, which 404s. window.fetch cannot intercept
+    // implicit browser fetches; patching Element.prototype.setAttribute can.
     (function() {
-      var nativeFetch = window.fetch;
-      var currentFetch = nativeFetch;
-      function intercepted(url, init) {
-        var u = typeof url === 'string' ? url : (url && (url.href || url.url)) || '';
-        if (u.indexOf('"') !== -1 || u.indexOf('%22') !== -1) {
+      var origSetAttr = Element.prototype.setAttribute;
+      Element.prototype.setAttribute = function(name, value) {
+        if ((name === 'src' || name === 'href') && typeof value === 'string'
+            && (value.indexOf('"') !== -1 || value.indexOf('%22') !== -1)) {
           for (var id in blobUrls) {
-            if (u.indexOf(id) !== -1) return Promise.resolve(new Response(';', {status:200, headers:{'Content-Type':'application/javascript'}}));
+            if (value.indexOf(id) !== -1) {
+              return origSetAttr.call(this, name, 'data:application/javascript;,');
+            }
           }
         }
-        return currentFetch.apply(this, arguments);
-      }
-      try {
-        Object.defineProperty(window, 'fetch', {
-          get: function() { return intercepted; },
-          set: function(fn) { currentFetch = fn; },
-          configurable: true
-        });
-      } catch(e) { window.fetch = intercepted; }
+        return origSetAttr.apply(this, arguments);
+      };
     })();
 
     const extResEl = document.querySelector('script[type="__bundler/ext_resources"]');
