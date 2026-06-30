@@ -154,6 +154,28 @@ document.addEventListener('DOMContentLoaded', async function() {
       template = template.slice(0, i) + resourceScript + template.slice(i);
     }
 
+    // The dc-runtime calls fetch(location.href) after boot to refresh its
+    // template. Since location.href points to this bundler HTML (not the Framer
+    // template), parseDcText would find <x-dc> inside the JSON string and feed
+    // JSON-encoded garbage to updateHtml, corrupting the rendered page.
+    // Intercept that fetch and return the real Framer template HTML instead.
+    (function() {
+      var _framedTemplate = template;
+      var _origFetch = window.fetch;
+      window.fetch = function(url, opts) {
+        try {
+          var href = typeof url === 'string' ? url : (url && url.url) ? url.url : null;
+          if (href && href === location.href) {
+            return Promise.resolve(new Response(_framedTemplate, {
+              status: 200,
+              headers: { 'Content-Type': 'text/html' }
+            }));
+          }
+        } catch(e) {}
+        return _origFetch.apply(this, arguments);
+      };
+    })();
+
     // Parse the template and swap the root element. Scripts inserted via
     // DOMParser/replaceWith are inert per spec — re-create each with
     // createElement so they execute, awaiting onload for src scripts to
