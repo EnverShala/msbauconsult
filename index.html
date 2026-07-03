@@ -1146,10 +1146,11 @@ a:hover { color: var(--link-hover); }
       #hero-cue{display:none!important}
     }
     .about-label-mobile{display:none}
-    .about-label-desktop{display:flex}
+    @media(min-width:900px){
+      .about-label-desktop{display:flex!important}
+    }
     @media(max-width:899px){
       .about-label-mobile{display:flex}
-      .about-label-desktop{display:none}
     }
     @media(max-width:361px){
       #hero-content{padding-top:104px!important;padding-bottom:32px!important}
@@ -1265,7 +1266,7 @@ a:hover { color: var(--link-hover); }
         </div>
       </div>
       <div class="reveal" style="flex:1 1 440px;min-width:300px">
-        <div class="about-label-desktop" style="align-items:center;gap:14px;margin-bottom:18px">
+        <div class="about-label-desktop" style="display:none;align-items:center;gap:14px;margin-bottom:18px">
           <span style="width:36px;height:2px;background:var(--accent,#FFC000)"></span>
           <span style="font-size:13px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#8a8a8a">Über mich</span>
         </div>
