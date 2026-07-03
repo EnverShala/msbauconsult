@@ -21,9 +21,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Prepare web files
+        run: |
+          mkdir _site
+          cp -r assets favicon.svg robots.txt sitemap.xml .nojekyll index.html _site/
+          mkdir -p _site/datenschutz _site/impressum
+          cp datenschutz/index.html _site/datenschutz/
+          cp impressum/index.html _site/impressum/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
