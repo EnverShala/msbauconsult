@@ -1165,7 +1165,7 @@ a:hover { color: var(--link-hover); }
   <!-- NAV -->
   <header style="position:fixed;top:0;left:0;right:0;z-index:1000;background: {{ navBg }};border-bottom: {{ navBorder }};color:#fff;backdrop-filter:blur(6px);transition:background .3s cubic-bezier(.4,0,.2,1),border-color .3s">
     <div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,5vw,48px);height:84px;display:flex;align-items:center;justify-content:space-between;gap:24px">
-      <a href="#start" style="display:flex;align-items:center;text-decoration:none;flex-shrink:0">
+      <a onclick="{{ navClick }}" data-target="start" href="#start" style="display:flex;align-items:center;text-decoration:none;flex-shrink:0">
         <img src="assets/logo.png" alt="MS Bauconsult" style="height:46px;width:auto;filter:drop-shadow(0 0 10px rgba(212,160,23,.35))">
       </a>
       <sc-if value="{{ desktop }}" hint-placeholder-val="{{ true }}">
@@ -1188,7 +1188,7 @@ a:hover { color: var(--link-hover); }
   </header>
 
   <!-- BACK TO TOP -->
-  <a href="#start" aria-label="Nach oben" style="position:fixed;right:clamp(16px,3vw,32px);bottom:clamp(16px,3vw,32px);z-index:900;width:46px;height:46px;display:flex;align-items:center;justify-content:center;background:var(--accent,#FFC000);color:#161616;text-decoration:none;font-size:20px;line-height:1;opacity: {{ toTopOpacity }};pointer-events: {{ toTopPe }};transform:translateY( {{ toTopY }} );transition:opacity .3s ease,transform .3s cubic-bezier(.4,0,.2,1),background .2s" style-hover="background:#A87800">↑</a>
+  <a onclick="{{ navClick }}" data-target="start" href="#start" aria-label="Nach oben" style="position:fixed;right:clamp(16px,3vw,32px);bottom:clamp(16px,3vw,32px);z-index:900;width:46px;height:46px;display:flex;align-items:center;justify-content:center;background:var(--accent,#FFC000);color:#161616;text-decoration:none;font-size:20px;line-height:1;opacity: {{ toTopOpacity }};pointer-events: {{ toTopPe }};transform:translateY( {{ toTopY }} );transition:opacity .3s ease,transform .3s cubic-bezier(.4,0,.2,1),background .2s" style-hover="background:#A87800">↑</a>
 
   <!-- DRAWER -->
   <sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
@@ -1354,10 +1354,10 @@ a:hover { color: var(--link-hover); }
             <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#8a8a8a;margin-bottom:6px">E-Mail</div>
             <div style="font-family:'Saira SemiCondensed','Saira',sans-serif;font-size:24px;font-weight:600;color:#fff">info@ms-bauconsult.de</div>
           </a>
-          <div style="padding:22px 0;border-bottom:1px solid #262626">
+          <a href="https://www.google.com/maps/search/?api=1&query=Stettener+Str.+24,+70734+Fellbach" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:block;padding:22px 0;border-bottom:1px solid #262626">
             <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#8a8a8a;margin-bottom:6px">Adresse</div>
             <div style="font-family:'Saira SemiCondensed','Saira',sans-serif;font-size:24px;font-weight:600;color:#fff">Stettener Str. 24, 70734 Fellbach</div>
-          </div>
+          </a>
         </div>
       </div>
       <div class="reveal" style="flex:1 1 380px;min-width:300px">
@@ -1407,7 +1407,7 @@ a:hover { color: var(--link-hover); }
           <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#8a8a8a;margin-bottom:18px">Navigation</div>
           <nav style="display:flex;flex-direction:column;gap:12px">
             <a href="#start" style="text-decoration:none;color:#cfcfcf;font-size:15px;transition:color .2s" style-hover="color: var(--accent,#FFC000)">Start</a>
-            <a href="#ueber" style="text-decoration:none;color:#cfcfcf;font-size:15px;transition:color .2s" style-hover="color: var(--accent,#FFC000)">Über mich</a>
+            <a onclick="{{ navClick }}" data-target="ueber" href="#ueber" style="text-decoration:none;color:#cfcfcf;font-size:15px;transition:color .2s" style-hover="color: var(--accent,#FFC000)">Über mich</a>
             <a href="#leistungen" style="text-decoration:none;color:#cfcfcf;font-size:15px;transition:color .2s" style-hover="color: var(--accent,#FFC000)">Leistungen</a>
             <a href="#kontakt" style="text-decoration:none;color:#cfcfcf;font-size:15px;transition:color .2s" style-hover="color: var(--accent,#FFC000)">Kontakt</a>
           </nav>
@@ -1501,13 +1501,13 @@ class Component extends DCLogic {
       navBorder: this.state.scrolled ? '1px solid #1f1f1f' : '1px solid transparent',
       menuOpen: this.state.menuOpen,
       toggleMenu: () => this.setState({ menuOpen: !this.state.menuOpen }),
-      closeMenu: (e) => { this.setState({ menuOpen: false }); if (e && e.currentTarget && e.currentTarget.hash) { e.preventDefault(); var id = e.currentTarget.hash.slice(1); setTimeout(function(){ var el=document.getElementById(id); if(el){ if(id==='start'){ window.scrollTo({top:0,behavior:'smooth'}); } else if(id==='kontakt'){ var _kt=document.getElementById('kontakt-top'); if(_kt){var _top=0,_e=_kt;while(_e){_top+=_e.offsetTop;_e=_e.offsetParent;}window.scrollTo({top:_top-100,behavior:'smooth'});}else window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-100,behavior:'smooth'}); } else { if(id==='ueber'&&window.innerWidth<900){ window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-100,behavior:'smooth'}); } else { if(tgt==='ueber'&&window.innerWidth<900){ window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-100,behavior:'smooth'}); } else { var _h=el.querySelector('h2,h3'); var _t=_h&&_h.parentElement?_h.parentElement.firstElementChild:(_h||el); window.scrollTo({top:_t.getBoundingClientRect().top+window.scrollY-100,behavior:'smooth'}); } } } } }, 50); } },
+      closeMenu: (e) => { this.setState({ menuOpen: false }); if (e && e.currentTarget && e.currentTarget.hash) { e.preventDefault(); var id = e.currentTarget.hash.slice(1); setTimeout(function(){ var el=document.getElementById(id); if(el){ if(id==='start'){ window.scrollTo({top:0,behavior:'smooth'}); } else if(id==='kontakt'){ var _kt=document.getElementById('kontakt-top'); if(_kt){var _top=0,_e=_kt;while(_e){_top+=_e.offsetTop;_e=_e.offsetParent;}window.scrollTo({top:_top-100,behavior:'smooth'});}else window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-100,behavior:'smooth'}); } else { if(id==='ueber'){ var _lbl=window.innerWidth<900?el.querySelector('.about-label-mobile'):el.querySelector('.about-label-desktop'); var _t=_lbl||el; window.scrollTo({top:_t.getBoundingClientRect().top+window.scrollY-100,behavior:'smooth'}); } else { var _h=el.querySelector('h2,h3'); var _t=_h&&_h.parentElement?_h.parentElement.firstElementChild:(_h||el); window.scrollTo({top:_t.getBoundingClientRect().top+window.scrollY-100,behavior:'smooth'}); } } } }, 50); } },
       showCue: this.props.showScrollCue ?? true,
       scrollPct: this.state.scrollPct,
       c_start: this.state.active === 'start' ? 'var(--accent,#FFC000)' : '#fff',
       c_ueber: this.state.active === 'ueber' ? 'var(--accent,#FFC000)' : '#fff',
       c_leistungen: this.state.active === 'leistungen' ? 'var(--accent,#FFC000)' : '#fff',
-      navClick: (e) => { var tgt = e && e.currentTarget ? (e.currentTarget.dataset.target || e.currentTarget.getAttribute('data-target')) : null; if (!tgt) return; e.preventDefault(); var el=document.getElementById(tgt); if(el){ if(tgt==='start'){ window.scrollTo({top:0,behavior:'smooth'}); } else if(tgt==='kontakt'){ var _kt=document.getElementById('kontakt-top'); if(_kt){var _top=0,_e=_kt;while(_e){_top+=_e.offsetTop;_e=_e.offsetParent;}window.scrollTo({top:_top-100,behavior:'smooth'});}else window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-100,behavior:'smooth'}); } else { var _h=el.querySelector('h2,h3'); var _t=_h&&_h.parentElement?_h.parentElement.firstElementChild:(_h||el); window.scrollTo({top:_t.getBoundingClientRect().top+window.scrollY-100,behavior:'smooth'}); } } },
+      navClick: (e) => { var tgt = e && e.currentTarget ? (e.currentTarget.dataset.target || e.currentTarget.getAttribute('data-target')) : null; if (!tgt) return; e.preventDefault(); var el=document.getElementById(tgt); if(el){ if(tgt==='start'){ window.scrollTo({top:0,behavior:'smooth'}); } else if(tgt==='kontakt'){ var _kt=document.getElementById('kontakt-top'); if(_kt){var _top=0,_e=_kt;while(_e){_top+=_e.offsetTop;_e=_e.offsetParent;}window.scrollTo({top:_top-100,behavior:'smooth'});}else window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-100,behavior:'smooth'}); } else if(tgt==='ueber'){ var _lbl=window.innerWidth<900?el.querySelector('.about-label-mobile'):el.querySelector('.about-label-desktop'); var _tgt=_lbl||el; window.scrollTo({top:_tgt.getBoundingClientRect().top+window.scrollY-100,behavior:'smooth'}); } else { var _h=el.querySelector('h2,h3'); var _t=_h&&_h.parentElement?_h.parentElement.firstElementChild:(_h||el); window.scrollTo({top:_t.getBoundingClientRect().top+window.scrollY-100,behavior:'smooth'}); } } },
       toTopOpacity: this.state.pastHero ? 1 : 0,
       toTopPe: this.state.pastHero ? 'auto' : 'none',
       toTopY: this.state.pastHero ? '0' : '12px',
