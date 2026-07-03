@@ -1145,6 +1145,11 @@ a:hover { color: var(--link-hover); }
     @media(max-width:599px){
       #hero-cue{display:none!important}
     }
+    .about-label-mobile{display:none}
+    @media(max-width:767px){
+      .about-label-mobile{display:flex}
+      .about-label-desktop{display:none}
+    }
     @media(max-width:361px){
       #hero-content{padding-top:104px!important;padding-bottom:32px!important}
       #hero-content>div:first-child{margin-bottom:12px!important}
@@ -1243,6 +1248,10 @@ a:hover { color: var(--link-hover); }
   <!-- ABOUT -->
   <section id="ueber" style="background:#000;padding:clamp(72px,11vw,140px) 0">
     <div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,5vw,48px);display:flex;flex-wrap:wrap;gap:clamp(40px,6vw,88px);align-items:flex-start">
+      <div class="about-label-mobile" style="flex:0 0 100%;width:100%;align-items:center;gap:14px">
+        <span style="width:36px;height:2px;background:var(--accent,#FFC000)"></span>
+        <span style="font-size:13px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#8a8a8a">Über mich</span>
+      </div>
       <div class="reveal" style="flex:1 1 300px;min-width:280px;max-width:420px">
         <div style="position:relative;background:#101010;border:1px solid #262626">
           <div style="position:absolute;top:0;left:0;width:64px;height:64px;border-top:3px solid var(--accent,#FFC000);border-left:3px solid var(--accent,#FFC000);z-index:1"></div>
@@ -1255,7 +1264,7 @@ a:hover { color: var(--link-hover); }
         </div>
       </div>
       <div class="reveal" style="flex:1 1 440px;min-width:300px">
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+        <div class="about-label-desktop" style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
           <span style="width:36px;height:2px;background:var(--accent,#FFC000)"></span>
           <span style="font-size:13px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#8a8a8a">Über mich</span>
         </div>
