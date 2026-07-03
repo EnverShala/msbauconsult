@@ -6,9 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
@@ -16,22 +14,28 @@ concurrency:
 
 jobs:
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Prepare web files
-        run: |
-          mkdir _site
-          cp -r assets favicon.svg robots.txt sitemap.xml .nojekyll index.html _site/
-          mkdir -p _site/datenschutz _site/impressum
-          cp datenschutz/index.html _site/datenschutz/
-          cp impressum/index.html _site/impressum/
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v4
         with:
-          path: _site
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          fetch-depth: 0
+
+      - name: Build site
+        run: |
+          mkdir -p /tmp/_site/datenschutz /tmp/_site/impressum
+          cp index.html favicon.svg robots.txt sitemap.xml .nojekyll /tmp/_site/
+          cp -r assets /tmp/_site/
+          cp datenschutz/index.html /tmp/_site/datenschutz/
+          cp impressum/index.html /tmp/_site/impressum/
+
+      - name: Deploy to gh-pages branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin gh-pages 2>/dev/null || true
+          git checkout gh-pages 2>/dev/null || git checkout --orphan gh-pages
+          git rm -rf . --quiet 2>/dev/null || true
+          cp -r /tmp/_site/. .
+          git add .
+          git diff --staged --quiet || git commit -m "Deploy to GitHub Pages"
+          git push origin gh-pages --force
