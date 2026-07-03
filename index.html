@@ -1315,7 +1315,7 @@ a:hover { color: var(--link-hover); }
         <sc-for list="{{ services }}" as="item">
           <article class="reveal" style="background:#FFFFFF;display:flex;flex-direction:column;transition:background .25s,box-shadow .25s;box-shadow:0 1px 3px rgba(0,0,0,.06)" style-hover="background:#FEFCF8">
             <div style="position:relative;width:100%;aspect-ratio:16/10;overflow:hidden;background:#E8E5E0">
-              <img src="{{ item.img }}" alt="{{ item.title }}" style="width:100%;height:100%;object-fit:cover;object-position:center;opacity:.95;transition:opacity .3s" style-hover="opacity:1" loading="lazy">
+              <img src="{{ item.img }}" alt="{{ item.title }}" style="width:100%;height:100%;object-fit:{{ item.fit || 'cover' }};object-position:center;opacity:.95;transition:opacity .3s" style-hover="opacity:1" loading="lazy">
               
             </div>
             <div style="height:3px;background:linear-gradient(90deg,#D4A017,transparent)"></div><div style="padding:26px 26px 30px">
@@ -1507,7 +1507,7 @@ class Component extends DCLogic {
       services: [
         { n: '01', img: 'assets/shutterstock_34071343.png', title: 'Bauberatung & Baubegleitung', body: 'Beratung vor Ort, fachgerechte Planung von Sanierungen, Ausschreibung und Vergabe, Bauüberwachung und ganzheitliche Projektsteuerung – zuverlässig und aus einer Hand.' },
         { n: '02', img: 'assets/shutterstock_61563004.png', title: 'Energieberatung', body: 'Energetische Optimierung Ihres Wohngebäudes: individueller Sanierungsfahrplan, Maßnahmenplanung, Begleitung in der Bauphase und Unterstützung bei Fördermitteln.' },
-        { n: '03', img: 'assets/kfw_bafa.png', title: 'Fördermittel', body: 'Beratung zu passenden Förderprogrammen und Übernahme der Beantragung bei KfW und BAFA – für eine reibungslose Abwicklung Ihres Vorhabens.' },
+        { n: '03', img: 'assets/kfw_bafa.png', fit: 'fill', title: 'Fördermittel', body: 'Beratung zu passenden Förderprogrammen und Übernahme der Beantragung bei KfW und BAFA – für eine reibungslose Abwicklung Ihres Vorhabens.' },
         { n: '04', img: 'assets/energieausweis-1.jpg', title: 'Energieausweis', body: 'Energieausweise für Wohngebäude nach aktueller Gesetzeslage. Ob Verbrauchs- oder Bedarfsausweis – individuell beraten und passend erstellt.' },
         { n: '05', img: 'assets/iSFP-sanierung-einzelmassnahmen-bafa-dena.jpg', title: 'Sanierungsfahrplan (iSFP)', body: 'Strukturierte Übersicht über empfohlene Sanierungsmaßnahmen – mit erhöhten Förderquoten für Ihr Projekt.' },
         { n: '06', img: 'assets/unsplash_01.png', title: 'Projektsteuerung', body: 'Ganzheitliche Steuerung von der Idee bis zur Fertigstellung: Koordination aller Beteiligten, Kosten, Termine und Qualität im Blick – als zentrale Schnittstelle.' },
