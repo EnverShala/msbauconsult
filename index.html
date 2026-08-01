@@ -1507,7 +1507,12 @@ class Component extends DCLogic {
     window.addEventListener('resize', this._onResize);
     this._applyAccent();
     this._heroH=()=>{document.documentElement.style.setProperty('--hero-h',window.innerHeight+'px')};this._heroH();this._lastHeroW=window.innerWidth;this._lastHeroH=window.innerHeight;var _isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);this._heroHResize=()=>{if(window.innerWidth!==this._lastHeroW){this._lastHeroW=window.innerWidth;this._lastHeroH=window.innerHeight;this._heroH()}else if(!_isIOS&&window.innerHeight!==this._lastHeroH){this._lastHeroH=window.innerHeight;this._heroH()}};window.addEventListener('resize',this._heroHResize)
-    var _hrTries=0;var _hrLoad=function(){if(document.getElementById('heizreport-sdk'))return;var _el=document.getElementById('wp_check_script');if(!_el){_hrTries++;if(_hrTries<20)setTimeout(_hrLoad,150);return;}var s=document.createElement('script');s.id='heizreport-sdk';s.src='https://heizreport.de/js/heizreport_3.js';s.async=true;document.body.appendChild(s);};this._hrLoad=_hrLoad;
+    // heizreport_3.js hängt seine gesamte Initialisierung an DOMContentLoaded — beim Nachladen nach Consent ist das Event längst gefeuert, der Listener würde nie laufen. Ein synthetisches DOMContentLoaded ist keine Option (bundle_2.js würde __dcBoot erneut ausführen). Daher: addEventListener kurzzeitig abfangen und den registrierten Handler nach dem Script-Load direkt aufrufen.
+    var _hrTries=0;var _hrLoad=function(){if(document.getElementById('heizreport-sdk'))return;var _el=document.getElementById('wp_check_script');if(!_el){_hrTries++;if(_hrTries<20)setTimeout(_hrLoad,150);return;}
+      var _origAdd=document.addEventListener,_pending=[];
+      document.addEventListener=function(t,fn,o){if(t==='DOMContentLoaded'){_pending.push(fn);return;}return _origAdd.call(document,t,fn,o);};
+      var _restore=function(){document.addEventListener=_origAdd;var p=_pending;_pending=[];p.forEach(function(fn){try{fn.call(document,new Event('DOMContentLoaded'));}catch(err){console.error('[wpcheck]',err);}});};
+      var s=document.createElement('script');s.id='heizreport-sdk';s.src='https://heizreport.de/js/heizreport_3.js';s.async=true;s.onload=_restore;s.onerror=function(){document.addEventListener=_origAdd;};document.body.appendChild(s);};this._hrLoad=_hrLoad;
   }
   componentDidUpdate() {
     this._applyAccent();
