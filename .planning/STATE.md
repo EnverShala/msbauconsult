@@ -30,3 +30,11 @@ Phase 1 vollständig abgeschlossen (2026-06-26):
 ## Next Step
 
 GitHub Repository anlegen und Code pushen (Phase 2), dann ganz am Schluss den Web3Forms Key eintragen.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260801-tgu | Site-Review, farbiges Logo auf allen Seiten, Heizreport-Wärmepumpencheck einbauen | 2026-08-01 | 137c199 | [260801-tgu-site-review-farbiges-logo-auf-allen-seit](./quick/260801-tgu-site-review-farbiges-logo-auf-allen-seit/) |
+
+Last activity: 2026-08-01 - Completed quick task 260801-tgu: Site-Review, farbiges Logo, Heizreport-Wärmepumpencheck
