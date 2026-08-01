@@ -1349,7 +1349,16 @@ a:hover { color: var(--link-hover); }
         <p style="margin:20px 0 0;font-size:17px;line-height:1.75;color:#6B6864;max-width:60ch">Machen Sie den kostenlosen Kurzcheck und erhalten Sie in wenigen Minuten eine erste, unverbindliche Einschätzung, ob sich eine Wärmepumpe für Ihre Immobilie eignet.</p>
       </div>
       <div class="reveal" style="max-width:900px;margin-top:clamp(32px,4vw,48px)">
-        <div id="wp_check_script" class="heizreport" data-heizreport-ansprache="du" data-primary-color="#3371b7" data-heizreport-user="info@ms-bauconsult.de"></div>
+        <sc-if value="{{ wpNotLoaded }}" hint-placeholder-val="{{ true }}">
+          <div style="border:1px solid #E0DDD8;background:#FAF8F5;padding:clamp(28px,4vw,44px)">
+            <p style="margin:0 0 20px;font-size:16px;line-height:1.75;color:#6B6864">Mit dem Laden des Wärmepumpen-Checks stimmen Sie zu, dass Daten – insbesondere Ihre IP-Adresse – an heizreport.de übertragen werden. Näheres dazu in unserer <a href="datenschutz/" style="color:var(--accent,#FFC000);text-decoration:underline">Datenschutzerklärung</a>.</p>
+            <button type="button" onclick="{{ loadWpCheck }}" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;height:54px;padding:0 32px;background:var(--accent,#FFC000);color:#161616;border:none;font-family:'Saira',sans-serif;font-size:15px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;transition:background .2s" style-hover="background:#A87800">Wärmepumpen-Check laden</button>
+            <p style="margin:16px 0 0;font-size:13px;color:#8a8a8a">Ihre Einwilligung gilt nur für diesen Seitenaufruf und wird nicht gespeichert.</p>
+          </div>
+        </sc-if>
+        <div style="display: {{ wpDisplay }}">
+          <div id="wp_check_script" class="heizreport" data-heizreport-ansprache="du" data-primary-color="#3371b7" data-heizreport-user="info@ms-bauconsult.de"></div>
+        </div>
       </div>
     </div>
   </section>
@@ -1462,6 +1471,7 @@ class Component extends DCLogic {
     scrollPct: 0,
     active: 'start',
     pastHero: false,
+    wpConsent: false,
     form: { name: '', email: '', message: '', phone: '' },
     sent: false,
     sendError: false,
@@ -1497,7 +1507,7 @@ class Component extends DCLogic {
     window.addEventListener('resize', this._onResize);
     this._applyAccent();
     this._heroH=()=>{document.documentElement.style.setProperty('--hero-h',window.innerHeight+'px')};this._heroH();this._lastHeroW=window.innerWidth;this._lastHeroH=window.innerHeight;var _isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);this._heroHResize=()=>{if(window.innerWidth!==this._lastHeroW){this._lastHeroW=window.innerWidth;this._lastHeroH=window.innerHeight;this._heroH()}else if(!_isIOS&&window.innerHeight!==this._lastHeroH){this._lastHeroH=window.innerHeight;this._heroH()}};window.addEventListener('resize',this._heroHResize)
-    var _hrTries=0;var _hrLoad=function(){if(document.getElementById('heizreport-sdk'))return;var _el=document.getElementById('wp_check_script');if(!_el){_hrTries++;if(_hrTries<20)setTimeout(_hrLoad,150);return;}var s=document.createElement('script');s.id='heizreport-sdk';s.src='https://heizreport.de/js/heizreport_3.js';s.async=true;document.body.appendChild(s);};setTimeout(_hrLoad,0);
+    var _hrTries=0;var _hrLoad=function(){if(document.getElementById('heizreport-sdk'))return;var _el=document.getElementById('wp_check_script');if(!_el){_hrTries++;if(_hrTries<20)setTimeout(_hrLoad,150);return;}var s=document.createElement('script');s.id='heizreport-sdk';s.src='https://heizreport.de/js/heizreport_3.js';s.async=true;document.body.appendChild(s);};this._hrLoad=_hrLoad;
   }
   componentDidUpdate() {
     this._applyAccent();
@@ -1533,6 +1543,9 @@ class Component extends DCLogic {
       toTopOpacity: this.state.pastHero ? 1 : 0,
       toTopPe: this.state.pastHero ? 'auto' : 'none',
       toTopY: this.state.pastHero ? '0' : '12px',
+      wpNotLoaded: !this.state.wpConsent,
+      wpDisplay: this.state.wpConsent ? 'block' : 'none',
+      loadWpCheck: () => { this.setState({ wpConsent: true }); setTimeout(this._hrLoad, 0); },
       services: [
         { n: '01', img: 'assets/shutterstock_34071343.png', title: 'Bauberatung & Baubegleitung', body: 'Beratung vor Ort, fachgerechte Planung von Sanierungen, Ausschreibung und Vergabe, Bauüberwachung und ganzheitliche Projektsteuerung – zuverlässig und aus einer Hand.' },
         { n: '02', img: 'assets/shutterstock_61563004.png', title: 'Energieberatung', body: 'Energetische Optimierung Ihres Wohngebäudes: individueller Sanierungsfahrplan, Maßnahmenplanung, Begleitung in der Bauphase und Unterstützung bei Fördermitteln.' },
