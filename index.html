@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html><head>
+<html lang="de"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="assets/bundle_2.js"></script>
@@ -1095,6 +1095,12 @@ a:hover { color: var(--link-hover); }
     body{margin:0;font-family:'Saira','Helvetica Neue',Arial,sans-serif;color:#fff;background:#000;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
     img{display:block;max-width:100%}
     a{color:inherit}
+    /* Wärmepumpen-Check (heizreport.de): Das Plugin setzt auf p/label/div keine eigene Textfarbe und erbt das body-Weiß — im weißen Widget unsichtbar. Buttons der Ergebnis-Boxen richtet das Plugin mit festen margin-Werten aus, die bei gestreckten Flex-Boxen auseinanderlaufen. */
+    #wp_check_script{color:#333}
+    #wp_check_script img{display:inline-block}
+    #wp_check_script .result-box button{margin-top:auto!important}
+    #wp_check_script .result-box>div:last-of-type{margin-bottom:20px}
+    #wp_check_script .video-container img{border-color:#3371b7!important}
     @keyframes drawerIn{from{opacity:0}to{opacity:1}}
     @keyframes drawerItem{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
     @keyframes cueBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(7px)}}
@@ -1166,13 +1172,14 @@ a:hover { color: var(--link-hover); }
   <header style="position:fixed;top:0;left:0;right:0;z-index:1000;background: {{ navBg }};border-bottom: {{ navBorder }};color:#fff;backdrop-filter:blur(6px);transition:background .3s cubic-bezier(.4,0,.2,1),border-color .3s">
     <div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,5vw,48px);height:84px;display:flex;align-items:center;justify-content:space-between;gap:24px">
       <a onclick="{{ navClick }}" data-target="start" href="#start" style="display:flex;align-items:center;text-decoration:none;flex-shrink:0">
-        <img src="assets/logo.png" alt="MS Bauconsult" style="height:46px;width:auto;filter:drop-shadow(0 0 10px rgba(212,160,23,.35))">
+        <img src="assets/logo.png" alt="MS Bauconsult" width="1281" height="413" style="height:46px;width:auto;filter:drop-shadow(0 0 10px rgba(212,160,23,.35))">
       </a>
       <sc-if value="{{ desktop }}" hint-placeholder-val="{{ true }}">
         <nav style="display:flex;align-items:center;gap:36px">
           <a href="#start" onclick="{{ navClick }}" data-target="start" style="position:relative;text-decoration:none;font-size:13px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color: {{ c_start }};transition:color .25s" style-hover="color: var(--accent,#FFC000)">Start</a>
           <a href="#ueber" onclick="{{ navClick }}" data-target="ueber" style="position:relative;text-decoration:none;font-size:13px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color: {{ c_ueber }};transition:color .25s" style-hover="color: var(--accent,#FFC000)">Über mich</a>
           <a href="#leistungen" onclick="{{ navClick }}" data-target="leistungen" style="position:relative;text-decoration:none;font-size:13px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color: {{ c_leistungen }};transition:color .25s" style-hover="color: var(--accent,#FFC000)">Leistungen</a>
+          <a href="#waermepumpencheck" onclick="{{ navClick }}" data-target="waermepumpencheck" style="position:relative;text-decoration:none;font-size:13px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color: {{ c_wpcheck }};transition:color .25s" style-hover="color: var(--accent,#FFC000)">Wärmepumpe</a>
           <a onclick="{{ navClick }}" data-target="kontakt" href="#kontakt" style="text-decoration:none;display:inline-flex;align-items:center;height:42px;padding:0 24px;background:var(--accent,#FFC000);color:#161616;font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;transition:background .2s" style-hover="background:#A87800">Kontakt</a>
         </nav>
       </sc-if>
@@ -1194,14 +1201,15 @@ a:hover { color: var(--link-hover); }
   <sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
     <div style="position:fixed;inset:0;z-index:1200;background:#0a0a0a;color:#fff;display:flex;flex-direction:column;animation:drawerIn .25s ease both">
       <div style="height:80px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(20px,5vw,48px)">
-        <img src="assets/logo.png" alt="MS Bauconsult" style="height:36px;width:auto">
+        <img src="assets/logo.png" alt="MS Bauconsult" width="1281" height="413" style="height:36px;width:auto">
         <button onclick="{{ closeMenu }}" aria-label="Schließen" style="width:44px;height:44px;background:none;border:none;color:#fff;cursor:pointer;font-size:30px;line-height:1;font-weight:300">×</button>
       </div>
       <nav style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:8px;padding:0 clamp(28px,8vw,64px)">
         <a onclick="{{ closeMenu }}" href="#start" style="text-decoration:none;color:#fff;font-family:'Saira SemiCondensed','Saira',sans-serif;font-size:34px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:14px 0;border-bottom:1px solid #1f1f1f;animation:drawerItem .35s ease both">Start</a>
         <a onclick="{{ closeMenu }}" href="#ueber" style="text-decoration:none;color:#fff;font-family:'Saira SemiCondensed','Saira',sans-serif;font-size:34px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:14px 0;border-bottom:1px solid #1f1f1f;animation:drawerItem .42s ease both">Über mich</a>
         <a onclick="{{ closeMenu }}" href="#leistungen" style="text-decoration:none;color:#fff;font-family:'Saira SemiCondensed','Saira',sans-serif;font-size:34px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:14px 0;border-bottom:1px solid #1f1f1f;animation:drawerItem .49s ease both">Leistungen</a>
-        <a onclick="{{ closeMenu }}" href="#kontakt" style="text-decoration:none;color:var(--accent,#FFC000);font-family:'Saira SemiCondensed','Saira',sans-serif;font-size:34px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:14px 0;animation:drawerItem .56s ease both">Kontakt</a>
+        <a onclick="{{ closeMenu }}" href="#waermepumpencheck" style="text-decoration:none;color:#fff;font-family:'Saira SemiCondensed','Saira',sans-serif;font-size:34px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:14px 0;border-bottom:1px solid #1f1f1f;animation:drawerItem .56s ease both">Wärmepumpe</a>
+        <a onclick="{{ closeMenu }}" href="#kontakt" style="text-decoration:none;color:var(--accent,#FFC000);font-family:'Saira SemiCondensed','Saira',sans-serif;font-size:34px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:14px 0;animation:drawerItem .63s ease both">Kontakt</a>
       </nav>
       <div style="padding:0 clamp(28px,8vw,64px) 40px;color:#7d7d7d;font-size:14px;line-height:1.9">
         <div>+49 172 232 14 82</div>
@@ -1214,7 +1222,7 @@ a:hover { color: var(--link-hover); }
   <!-- HERO -->
   <section id="start" style="position:relative;display:flex;align-items:flex-end;background:#000;color:#fff;overflow:hidden">
     <div style="position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:64px 64px;z-index:0"></div>
-    <img src="assets/shutterstock_34071343.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55;animation:heroZoom 1.8s cubic-bezier(.22,.61,.36,1) both">
+    <img src="assets/shutterstock_34071343.png" alt="" width="500" height="375" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55;animation:heroZoom 1.8s cubic-bezier(.22,.61,.36,1) both">
     <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.6) 0%,rgba(0,0,0,.35) 40%,rgba(0,0,0,.92) 100%)"></div>
     <div style="position:absolute;inset:0;background:radial-gradient(65% 55% at 30% 65%,rgba(212,160,23,.13),transparent 72%)"></div>
 
@@ -1253,12 +1261,12 @@ a:hover { color: var(--link-hover); }
       <div class="reveal" style="flex:1 1 300px;min-width:280px;max-width:420px">
         <div style="position:relative;background:#101010;border:1px solid #262626">
           <div style="position:absolute;top:0;left:0;width:64px;height:64px;border-top:3px solid var(--accent,#FFC000);border-left:3px solid var(--accent,#FFC000);z-index:1"></div>
-          <img src="assets/ms.profil-300x246.png" alt="Muhamed Shala" style="width:100%;height:auto;display:block">
+          <img src="assets/ms.profil-300x246.png" alt="Muhamed Shala" width="300" height="246" style="width:100%;height:auto;display:block">
         </div>
         <div style="margin-top:24px;padding-left:4px">
           <div style="font-family:'Saira SemiCondensed','Saira',sans-serif;font-size:24px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;color:#fff">Muhamed Shala, M.Eng.</div>
           <div style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--accent,#FFC000);margin-top:6px;font-weight:600">Ingenieur · Inhaber</div>
-          <div style="display:inline-block;background:#fff;padding:4px 10px;border-radius:2px;margin-top:20px;opacity:0.9"><img src="assets/eee-300x73.png" alt="Energieeffizienz-Experte" style="height:38px;width:auto;display:block"></div>
+          <div style="display:inline-block;background:#fff;padding:4px 10px;border-radius:2px;margin-top:20px;opacity:0.9"><img src="assets/eee-300x73.png" alt="Energieeffizienz-Experte" width="300" height="73" style="height:38px;width:auto;display:block"></div>
         </div>
       </div>
       <div class="reveal" style="flex:1 1 440px;min-width:300px">
@@ -1322,7 +1330,7 @@ a:hover { color: var(--link-hover); }
         <sc-for list="{{ services }}" as="item">
           <article class="reveal" style="background:#FFFFFF;display:flex;flex-direction:column;transition:background .25s,box-shadow .25s;box-shadow:0 1px 3px rgba(0,0,0,.06)" style-hover="background:#FEFCF8">
             <div style="position:relative;width:100%;aspect-ratio:16/10;overflow:hidden;background:#E8E5E0">
-              <img src="{{ item.img }}" alt="{{ item.title }}" style="width:100%;height:100%;object-fit:{{ item.fit || 'cover' }};object-position:center;opacity:.95;transition:opacity .3s" style-hover="opacity:1" loading="lazy">
+              <img src="{{ item.img }}" alt="{{ item.title }}" width="{{ item.w }}" height="{{ item.h }}" style="width:100%;height:100%;object-fit:{{ item.fit || 'cover' }};object-position:center;opacity:.95;transition:opacity .3s" style-hover="opacity:1" loading="lazy">
               
             </div>
             <div style="height:3px;background:linear-gradient(90deg,#D4A017,transparent)"></div><div style="padding:26px 26px 30px">
@@ -1331,6 +1339,32 @@ a:hover { color: var(--link-hover); }
             </div>
           </article>
         </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <!-- WAERMEPUMPENCHECK -->
+  <section id="waermepumpencheck" style="background:#FFFFFF;padding:clamp(72px,11vw,140px) 0">
+    <div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,5vw,48px)">
+      <div class="reveal" style="max-width:640px;margin-bottom:clamp(40px,6vw,64px)">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+          <span style="width:36px;height:2px;background:var(--accent,#FFC000)"></span>
+          <span style="font-size:13px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#6B6864">Wärmepumpen-Check</span>
+        </div>
+        <h2 style="margin:0;font-family:'Saira SemiCondensed','Saira',sans-serif;font-weight:600;font-size:clamp(28px,4vw,50px);line-height:1.05;letter-spacing:-.4px;text-transform:uppercase;color:#181716">Passt eine Wärmepumpe zu Ihrem Haus?</h2>
+        <p style="margin:20px 0 0;font-size:17px;line-height:1.75;color:#6B6864;max-width:60ch">Machen Sie den kostenlosen Kurzcheck und erhalten Sie in wenigen Minuten eine erste, unverbindliche Einschätzung, ob sich eine Wärmepumpe für Ihre Immobilie eignet.</p>
+      </div>
+      <div class="reveal" style="max-width:900px;margin-top:clamp(32px,4vw,48px)">
+        <sc-if value="{{ wpNotLoaded }}" hint-placeholder-val="{{ true }}">
+          <div style="border:1px solid #E0DDD8;background:#FAF8F5;padding:clamp(28px,4vw,44px)">
+            <p style="margin:0 0 20px;font-size:16px;line-height:1.75;color:#6B6864">Mit dem Laden des Wärmepumpen-Checks stimmen Sie zu, dass Daten – insbesondere Ihre IP-Adresse – an heizreport.de übertragen werden. Näheres dazu in unserer <a href="datenschutz/" style="color:var(--accent,#FFC000);text-decoration:underline">Datenschutzerklärung</a>.</p>
+            <button type="button" onclick="{{ loadWpCheck }}" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;height:54px;padding:0 32px;background:var(--accent,#FFC000);color:#161616;border:none;font-family:'Saira',sans-serif;font-size:15px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;transition:background .2s" style-hover="background:#A87800">Wärmepumpen-Check laden</button>
+            <p style="margin:16px 0 0;font-size:13px;color:#8a8a8a">Ihre Einwilligung gilt nur für diesen Seitenaufruf und wird nicht gespeichert.</p>
+          </div>
+        </sc-if>
+        <div style="display: {{ wpDisplay }}">
+          <div id="wp_check_script" class="heizreport" data-heizreport-ansprache="sie" data-primary-color="#3371b7" data-heizreport-user="info@ms-bauconsult.de"></div>
+        </div>
       </div>
     </div>
   </section>
@@ -1400,7 +1434,7 @@ a:hover { color: var(--link-hover); }
     <div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,5vw,48px)">
       <div style="display:flex;flex-wrap:wrap;gap:48px;justify-content:space-between;padding-bottom:48px;border-bottom:1px solid #1f1f1f">
         <div style="flex:1 1 280px;max-width:360px">
-          <a onclick="{{ navClick }}" data-target="start" href="#start" style="display:inline-block;text-decoration:none"><img src="assets/logo.png" alt="MS Bauconsult" style="height:48px;width:auto;margin-bottom:20px;filter:drop-shadow(0 0 8px rgba(212,160,23,.25))"></a>
+          <a onclick="{{ navClick }}" data-target="start" href="#start" style="display:inline-block;text-decoration:none"><img src="assets/logo.png" alt="MS Bauconsult" width="1281" height="413" style="height:48px;width:auto;margin-bottom:20px;filter:drop-shadow(0 0 8px rgba(212,160,23,.25))"></a>
           <p style="margin:0;color:#8a8a8a;font-size:15px;line-height:1.7;max-width:38ch">Ingenieurbüro für Bau- und Energieberatung. Ihr Projekt, Ihre Ziele, Ihr nachhaltiger Erfolg.</p>
         </div>
         <div style="flex:0 1 auto">
@@ -1409,6 +1443,7 @@ a:hover { color: var(--link-hover); }
             <a href="#start" style="text-decoration:none;color:#cfcfcf;font-size:15px;transition:color .2s" style-hover="color: var(--accent,#FFC000)">Start</a>
             <a onclick="{{ navClick }}" data-target="ueber" href="#ueber" style="text-decoration:none;color:#cfcfcf;font-size:15px;transition:color .2s" style-hover="color: var(--accent,#FFC000)">Über mich</a>
             <a href="#leistungen" style="text-decoration:none;color:#cfcfcf;font-size:15px;transition:color .2s" style-hover="color: var(--accent,#FFC000)">Leistungen</a>
+            <a href="#waermepumpencheck" style="text-decoration:none;color:#cfcfcf;font-size:15px;transition:color .2s" style-hover="color: var(--accent,#FFC000)">Wärmepumpe</a>
             <a href="#kontakt" style="text-decoration:none;color:#cfcfcf;font-size:15px;transition:color .2s" style-hover="color: var(--accent,#FFC000)">Kontakt</a>
           </nav>
         </div>
@@ -1442,6 +1477,7 @@ class Component extends DCLogic {
     scrollPct: 0,
     active: 'start',
     pastHero: false,
+    wpConsent: false,
     form: { name: '', email: '', message: '', phone: '' },
     sent: false,
     sendError: false,
@@ -1455,7 +1491,7 @@ class Component extends DCLogic {
       const pct = max > 0 ? Math.min(100, Math.max(0, (window.scrollY / max) * 100)) : 0;
       const pastHero = window.scrollY > window.innerHeight * 0.85;
       // scroll-spy
-      const ids = ['start', 'ueber', 'leistungen', 'kontakt'];
+      const ids = ['start', 'ueber', 'leistungen', 'waermepumpencheck', 'kontakt'];
       const mark = window.scrollY + window.innerHeight * 0.35;
       let active = 'start';
       for (const id of ids) {
@@ -1477,6 +1513,12 @@ class Component extends DCLogic {
     window.addEventListener('resize', this._onResize);
     this._applyAccent();
     this._heroH=()=>{document.documentElement.style.setProperty('--hero-h',window.innerHeight+'px')};this._heroH();this._lastHeroW=window.innerWidth;this._lastHeroH=window.innerHeight;var _isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);this._heroHResize=()=>{if(window.innerWidth!==this._lastHeroW){this._lastHeroW=window.innerWidth;this._lastHeroH=window.innerHeight;this._heroH()}else if(!_isIOS&&window.innerHeight!==this._lastHeroH){this._lastHeroH=window.innerHeight;this._heroH()}};window.addEventListener('resize',this._heroHResize)
+    // heizreport_3.js hängt seine gesamte Initialisierung an DOMContentLoaded — beim Nachladen nach Consent ist das Event längst gefeuert, der Listener würde nie laufen. Ein synthetisches DOMContentLoaded ist keine Option (bundle_2.js würde __dcBoot erneut ausführen). Daher: addEventListener kurzzeitig abfangen und den registrierten Handler nach dem Script-Load direkt aufrufen.
+    var _hrTries=0;var _hrLoad=function(){if(document.getElementById('heizreport-sdk'))return;var _el=document.getElementById('wp_check_script');if(!_el){_hrTries++;if(_hrTries<20)setTimeout(_hrLoad,150);return;}
+      var _origAdd=document.addEventListener,_pending=[];
+      document.addEventListener=function(t,fn,o){if(t==='DOMContentLoaded'){_pending.push(fn);return;}return _origAdd.call(document,t,fn,o);};
+      var _restore=function(){document.addEventListener=_origAdd;var p=_pending;_pending=[];p.forEach(function(fn){try{fn.call(document,new Event('DOMContentLoaded'));}catch(err){console.error('[wpcheck]',err);}});};
+      var s=document.createElement('script');s.id='heizreport-sdk';s.src='https://heizreport.de/js/heizreport_3.js';s.async=true;s.onload=_restore;s.onerror=function(){document.addEventListener=_origAdd;};document.body.appendChild(s);};this._hrLoad=_hrLoad;
   }
   componentDidUpdate() {
     this._applyAccent();
@@ -1507,17 +1549,21 @@ class Component extends DCLogic {
       c_start: this.state.active === 'start' ? 'var(--accent,#FFC000)' : '#fff',
       c_ueber: this.state.active === 'ueber' ? 'var(--accent,#FFC000)' : '#fff',
       c_leistungen: this.state.active === 'leistungen' ? 'var(--accent,#FFC000)' : '#fff',
+      c_wpcheck: this.state.active === 'waermepumpencheck' ? 'var(--accent,#FFC000)' : '#fff',
       navClick: (e) => { var tgt = e && e.currentTarget ? (e.currentTarget.dataset.target || e.currentTarget.getAttribute('data-target')) : null; if (!tgt) return; e.preventDefault(); var el=document.getElementById(tgt); if(el){ if(tgt==='start'){ window.scrollTo({top:0,behavior:'smooth'}); } else if(tgt==='kontakt'){ var _kt=document.getElementById('kontakt-top'); if(_kt){var _top=0,_e=_kt;while(_e){_top+=_e.offsetTop;_e=_e.offsetParent;}window.scrollTo({top:_top-100,behavior:'smooth'});}else window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-100,behavior:'smooth'}); } else if(tgt==='ueber'){ var _lbl=window.innerWidth<900?el.querySelector('.about-label-mobile'):el.querySelector('.about-label-desktop'); var _tgt=_lbl||el; window.scrollTo({top:_tgt.getBoundingClientRect().top+window.scrollY-100,behavior:'smooth'}); } else { var _h=el.querySelector('h2,h3'); var _t=_h&&_h.parentElement?_h.parentElement.firstElementChild:(_h||el); window.scrollTo({top:_t.getBoundingClientRect().top+window.scrollY-100,behavior:'smooth'}); } } },
       toTopOpacity: this.state.pastHero ? 1 : 0,
       toTopPe: this.state.pastHero ? 'auto' : 'none',
       toTopY: this.state.pastHero ? '0' : '12px',
+      wpNotLoaded: !this.state.wpConsent,
+      wpDisplay: this.state.wpConsent ? 'block' : 'none',
+      loadWpCheck: () => { this.setState({ wpConsent: true }); setTimeout(this._hrLoad, 0); },
       services: [
-        { n: '01', img: 'assets/shutterstock_34071343.png', title: 'Bauberatung & Baubegleitung', body: 'Beratung vor Ort, fachgerechte Planung von Sanierungen, Ausschreibung und Vergabe, Bauüberwachung und ganzheitliche Projektsteuerung – zuverlässig und aus einer Hand.' },
-        { n: '02', img: 'assets/shutterstock_61563004.png', title: 'Energieberatung', body: 'Energetische Optimierung Ihres Wohngebäudes: individueller Sanierungsfahrplan, Maßnahmenplanung, Begleitung in der Bauphase und Unterstützung bei Fördermitteln.' },
-        { n: '03', img: 'assets/kfw_bafa.png', fit: 'fill', title: 'Fördermittel', body: 'Beratung zu passenden Förderprogrammen und Übernahme der Beantragung bei KfW und BAFA – für eine reibungslose Abwicklung Ihres Vorhabens.' },
-        { n: '04', img: 'assets/energieausweis-1.jpg', title: 'Energieausweis', body: 'Energieausweise für Wohngebäude nach aktueller Gesetzeslage. Ob Verbrauchs- oder Bedarfsausweis – individuell beraten und passend erstellt.' },
-        { n: '05', img: 'assets/iSFP-sanierung-einzelmassnahmen-bafa-dena.jpg', title: 'Sanierungsfahrplan (iSFP)', body: 'Strukturierte Übersicht über empfohlene Sanierungsmaßnahmen – mit erhöhten Förderquoten für Ihr Projekt.' },
-        { n: '06', img: 'assets/unsplash_01.png', title: 'Projektsteuerung', body: 'Ganzheitliche Steuerung von der Idee bis zur Fertigstellung: Koordination aller Beteiligten, Kosten, Termine und Qualität im Blick – als zentrale Schnittstelle.' },
+        { n: '01', img: 'assets/shutterstock_34071343.png', w: 500, h: 375, title: 'Bauberatung & Baubegleitung', body: 'Beratung vor Ort, fachgerechte Planung von Sanierungen, Ausschreibung und Vergabe, Bauüberwachung und ganzheitliche Projektsteuerung – zuverlässig und aus einer Hand.' },
+        { n: '02', img: 'assets/shutterstock_61563004.png', w: 1024, h: 768, title: 'Energieberatung', body: 'Energetische Optimierung Ihres Wohngebäudes: individueller Sanierungsfahrplan, Maßnahmenplanung, Begleitung in der Bauphase und Unterstützung bei Fördermitteln.' },
+        { n: '03', img: 'assets/kfw_bafa.png', w: 1015, h: 903, fit: 'fill', title: 'Fördermittel', body: 'Beratung zu passenden Förderprogrammen und Übernahme der Beantragung bei KfW und BAFA – für eine reibungslose Abwicklung Ihres Vorhabens.' },
+        { n: '04', img: 'assets/energieausweis-1.jpg', w: 250, h: 354, title: 'Energieausweis', body: 'Energieausweise für Wohngebäude nach aktueller Gesetzeslage. Ob Verbrauchs- oder Bedarfsausweis – individuell beraten und passend erstellt.' },
+        { n: '05', img: 'assets/iSFP-sanierung-einzelmassnahmen-bafa-dena.jpg', w: 560, h: 420, title: 'Sanierungsfahrplan (iSFP)', body: 'Strukturierte Übersicht über empfohlene Sanierungsmaßnahmen – mit erhöhten Förderquoten für Ihr Projekt.' },
+        { n: '06', img: 'assets/unsplash_01.png', w: 500, h: 400, title: 'Projektsteuerung', body: 'Ganzheitliche Steuerung von der Idee bis zur Fertigstellung: Koordination aller Beteiligten, Kosten, Termine und Qualität im Blick – als zentrale Schnittstelle.' },
       ],
       name: f.name, email: f.email, message: f.message, phone: f.phone,
       setName: setField('name'), setEmail: setField('email'), setMessage: setField('message'), setPhone: setField('phone'),
