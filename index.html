@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html><head>
+<html lang="de"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="assets/bundle_2.js"></script>
@@ -1173,6 +1173,7 @@ a:hover { color: var(--link-hover); }
           <a href="#start" onclick="{{ navClick }}" data-target="start" style="position:relative;text-decoration:none;font-size:13px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color: {{ c_start }};transition:color .25s" style-hover="color: var(--accent,#FFC000)">Start</a>
           <a href="#ueber" onclick="{{ navClick }}" data-target="ueber" style="position:relative;text-decoration:none;font-size:13px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color: {{ c_ueber }};transition:color .25s" style-hover="color: var(--accent,#FFC000)">Über mich</a>
           <a href="#leistungen" onclick="{{ navClick }}" data-target="leistungen" style="position:relative;text-decoration:none;font-size:13px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color: {{ c_leistungen }};transition:color .25s" style-hover="color: var(--accent,#FFC000)">Leistungen</a>
+          <a href="#waermepumpencheck" onclick="{{ navClick }}" data-target="waermepumpencheck" style="position:relative;text-decoration:none;font-size:13px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color: {{ c_wpcheck }};transition:color .25s" style-hover="color: var(--accent,#FFC000)">Wärmepumpe</a>
           <a onclick="{{ navClick }}" data-target="kontakt" href="#kontakt" style="text-decoration:none;display:inline-flex;align-items:center;height:42px;padding:0 24px;background:var(--accent,#FFC000);color:#161616;font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;transition:background .2s" style-hover="background:#A87800">Kontakt</a>
         </nav>
       </sc-if>
@@ -1201,7 +1202,8 @@ a:hover { color: var(--link-hover); }
         <a onclick="{{ closeMenu }}" href="#start" style="text-decoration:none;color:#fff;font-family:'Saira SemiCondensed','Saira',sans-serif;font-size:34px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:14px 0;border-bottom:1px solid #1f1f1f;animation:drawerItem .35s ease both">Start</a>
         <a onclick="{{ closeMenu }}" href="#ueber" style="text-decoration:none;color:#fff;font-family:'Saira SemiCondensed','Saira',sans-serif;font-size:34px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:14px 0;border-bottom:1px solid #1f1f1f;animation:drawerItem .42s ease both">Über mich</a>
         <a onclick="{{ closeMenu }}" href="#leistungen" style="text-decoration:none;color:#fff;font-family:'Saira SemiCondensed','Saira',sans-serif;font-size:34px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:14px 0;border-bottom:1px solid #1f1f1f;animation:drawerItem .49s ease both">Leistungen</a>
-        <a onclick="{{ closeMenu }}" href="#kontakt" style="text-decoration:none;color:var(--accent,#FFC000);font-family:'Saira SemiCondensed','Saira',sans-serif;font-size:34px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:14px 0;animation:drawerItem .56s ease both">Kontakt</a>
+        <a onclick="{{ closeMenu }}" href="#waermepumpencheck" style="text-decoration:none;color:#fff;font-family:'Saira SemiCondensed','Saira',sans-serif;font-size:34px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:14px 0;border-bottom:1px solid #1f1f1f;animation:drawerItem .56s ease both">Wärmepumpe</a>
+        <a onclick="{{ closeMenu }}" href="#kontakt" style="text-decoration:none;color:var(--accent,#FFC000);font-family:'Saira SemiCondensed','Saira',sans-serif;font-size:34px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:14px 0;animation:drawerItem .63s ease both">Kontakt</a>
       </nav>
       <div style="padding:0 clamp(28px,8vw,64px) 40px;color:#7d7d7d;font-size:14px;line-height:1.9">
         <div>+49 172 232 14 82</div>
@@ -1335,6 +1337,23 @@ a:hover { color: var(--link-hover); }
     </div>
   </section>
 
+  <!-- WAERMEPUMPENCHECK -->
+  <section id="waermepumpencheck" style="background:#FFFFFF;padding:clamp(72px,11vw,140px) 0">
+    <div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,5vw,48px)">
+      <div class="reveal" style="max-width:640px;margin-bottom:clamp(40px,6vw,64px)">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+          <span style="width:36px;height:2px;background:var(--accent,#FFC000)"></span>
+          <span style="font-size:13px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#6B6864">Wärmepumpen-Check</span>
+        </div>
+        <h2 style="margin:0;font-family:'Saira SemiCondensed','Saira',sans-serif;font-weight:600;font-size:clamp(28px,4vw,50px);line-height:1.05;letter-spacing:-.4px;text-transform:uppercase;color:#181716">Passt eine Wärmepumpe zu Ihrem Haus?</h2>
+        <p style="margin:20px 0 0;font-size:17px;line-height:1.75;color:#6B6864;max-width:60ch">Machen Sie den kostenlosen Kurzcheck und erhalten Sie in wenigen Minuten eine erste, unverbindliche Einschätzung, ob sich eine Wärmepumpe für Ihre Immobilie eignet.</p>
+      </div>
+      <div class="reveal" style="max-width:900px;margin-top:clamp(32px,4vw,48px)">
+        <div id="wp_check_script" class="heizreport" data-heizreport-ansprache="du" data-primary-color="#3371b7" data-heizreport-user="info@ms-bauconsult.de"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- CONTACT -->
   <section id="kontakt" style="background:#0c0c0c;padding-top:clamp(72px,11vw,140px);padding-bottom:clamp(72px,11vw,140px)">
     <div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,5vw,48px);display:flex;flex-wrap:wrap;gap:clamp(40px,6vw,80px)">
@@ -1409,6 +1428,7 @@ a:hover { color: var(--link-hover); }
             <a href="#start" style="text-decoration:none;color:#cfcfcf;font-size:15px;transition:color .2s" style-hover="color: var(--accent,#FFC000)">Start</a>
             <a onclick="{{ navClick }}" data-target="ueber" href="#ueber" style="text-decoration:none;color:#cfcfcf;font-size:15px;transition:color .2s" style-hover="color: var(--accent,#FFC000)">Über mich</a>
             <a href="#leistungen" style="text-decoration:none;color:#cfcfcf;font-size:15px;transition:color .2s" style-hover="color: var(--accent,#FFC000)">Leistungen</a>
+            <a href="#waermepumpencheck" style="text-decoration:none;color:#cfcfcf;font-size:15px;transition:color .2s" style-hover="color: var(--accent,#FFC000)">Wärmepumpe</a>
             <a href="#kontakt" style="text-decoration:none;color:#cfcfcf;font-size:15px;transition:color .2s" style-hover="color: var(--accent,#FFC000)">Kontakt</a>
           </nav>
         </div>
@@ -1455,7 +1475,7 @@ class Component extends DCLogic {
       const pct = max > 0 ? Math.min(100, Math.max(0, (window.scrollY / max) * 100)) : 0;
       const pastHero = window.scrollY > window.innerHeight * 0.85;
       // scroll-spy
-      const ids = ['start', 'ueber', 'leistungen', 'kontakt'];
+      const ids = ['start', 'ueber', 'leistungen', 'waermepumpencheck', 'kontakt'];
       const mark = window.scrollY + window.innerHeight * 0.35;
       let active = 'start';
       for (const id of ids) {
@@ -1477,6 +1497,7 @@ class Component extends DCLogic {
     window.addEventListener('resize', this._onResize);
     this._applyAccent();
     this._heroH=()=>{document.documentElement.style.setProperty('--hero-h',window.innerHeight+'px')};this._heroH();this._lastHeroW=window.innerWidth;this._lastHeroH=window.innerHeight;var _isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);this._heroHResize=()=>{if(window.innerWidth!==this._lastHeroW){this._lastHeroW=window.innerWidth;this._lastHeroH=window.innerHeight;this._heroH()}else if(!_isIOS&&window.innerHeight!==this._lastHeroH){this._lastHeroH=window.innerHeight;this._heroH()}};window.addEventListener('resize',this._heroHResize)
+    var _hrTries=0;var _hrLoad=function(){if(document.getElementById('heizreport-sdk'))return;var _el=document.getElementById('wp_check_script');if(!_el){_hrTries++;if(_hrTries<20)setTimeout(_hrLoad,150);return;}var s=document.createElement('script');s.id='heizreport-sdk';s.src='https://heizreport.de/js/heizreport_3.js';s.async=true;document.body.appendChild(s);};setTimeout(_hrLoad,0);
   }
   componentDidUpdate() {
     this._applyAccent();
@@ -1507,6 +1528,7 @@ class Component extends DCLogic {
       c_start: this.state.active === 'start' ? 'var(--accent,#FFC000)' : '#fff',
       c_ueber: this.state.active === 'ueber' ? 'var(--accent,#FFC000)' : '#fff',
       c_leistungen: this.state.active === 'leistungen' ? 'var(--accent,#FFC000)' : '#fff',
+      c_wpcheck: this.state.active === 'waermepumpencheck' ? 'var(--accent,#FFC000)' : '#fff',
       navClick: (e) => { var tgt = e && e.currentTarget ? (e.currentTarget.dataset.target || e.currentTarget.getAttribute('data-target')) : null; if (!tgt) return; e.preventDefault(); var el=document.getElementById(tgt); if(el){ if(tgt==='start'){ window.scrollTo({top:0,behavior:'smooth'}); } else if(tgt==='kontakt'){ var _kt=document.getElementById('kontakt-top'); if(_kt){var _top=0,_e=_kt;while(_e){_top+=_e.offsetTop;_e=_e.offsetParent;}window.scrollTo({top:_top-100,behavior:'smooth'});}else window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-100,behavior:'smooth'}); } else if(tgt==='ueber'){ var _lbl=window.innerWidth<900?el.querySelector('.about-label-mobile'):el.querySelector('.about-label-desktop'); var _tgt=_lbl||el; window.scrollTo({top:_tgt.getBoundingClientRect().top+window.scrollY-100,behavior:'smooth'}); } else { var _h=el.querySelector('h2,h3'); var _t=_h&&_h.parentElement?_h.parentElement.firstElementChild:(_h||el); window.scrollTo({top:_t.getBoundingClientRect().top+window.scrollY-100,behavior:'smooth'}); } } },
       toTopOpacity: this.state.pastHero ? 1 : 0,
       toTopPe: this.state.pastHero ? 'auto' : 'none',
