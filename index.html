@@ -1095,6 +1095,12 @@ a:hover { color: var(--link-hover); }
     body{margin:0;font-family:'Saira','Helvetica Neue',Arial,sans-serif;color:#fff;background:#000;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
     img{display:block;max-width:100%}
     a{color:inherit}
+    /* Wärmepumpen-Check (heizreport.de): Das Plugin setzt auf p/label/div keine eigene Textfarbe und erbt das body-Weiß — im weißen Widget unsichtbar. Buttons der Ergebnis-Boxen richtet das Plugin mit festen margin-Werten aus, die bei gestreckten Flex-Boxen auseinanderlaufen. */
+    #wp_check_script{color:#333}
+    #wp_check_script img{display:inline-block}
+    #wp_check_script .result-box button{margin-top:auto!important}
+    #wp_check_script .result-box>div:last-of-type{margin-bottom:20px}
+    #wp_check_script .video-container img{border-color:#3371b7!important}
     @keyframes drawerIn{from{opacity:0}to{opacity:1}}
     @keyframes drawerItem{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
     @keyframes cueBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(7px)}}
