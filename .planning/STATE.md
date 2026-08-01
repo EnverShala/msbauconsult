@@ -36,5 +36,8 @@ GitHub Repository anlegen und Code pushen (Phase 2), dann ganz am Schluss den We
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260801-tgu | Site-Review, farbiges Logo auf allen Seiten, Heizreport-Wärmepumpencheck einbauen | 2026-08-01 | 137c199 | [260801-tgu-site-review-farbiges-logo-auf-allen-seit](./quick/260801-tgu-site-review-farbiges-logo-auf-allen-seit/) |
+| 260801-u8d | Heizreport-Widget hinter Zwei-Klick-Consent, optische Review-Fixes | 2026-08-01 | c2a2674 | [260801-u8d-heizreport-widget-hinter-zwei-klick-cons](./quick/260801-u8d-heizreport-widget-hinter-zwei-klick-cons/) |
 
-Last activity: 2026-08-01 - Completed quick task 260801-tgu: Site-Review, farbiges Logo, Heizreport-Wärmepumpencheck
+Last activity: 2026-08-01 - Completed quick task 260801-u8d: Zwei-Klick-Consent für Heizreport-Widget, optische Fixes
+
+Hinweis: Finales Hosting ist ein PHP-fähiger Server (ms-bauconsult.de) — `sendMail.php` ist der gewollte Formular-Backend-Weg, GitHub Pages dient nur als Preview.
