@@ -20,6 +20,8 @@ ErrorDocument 404 /index.html
     Header always set X-Content-Type-Options "nosniff"
     Header always set X-Frame-Options "SAMEORIGIN"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    # CSP: heizreport.de für Wärmepumpen-Check-Widget erlaubt
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://heizreport.de; style-src 'self' 'unsafe-inline' https://heizreport.de; img-src 'self' data: https://heizreport.de; font-src 'self'; connect-src 'self' https://heizreport.de; frame-src https://heizreport.de; object-src 'none'; base-uri 'self'; form-action 'self'"
 </IfModule>
 
 # Cache static assets
