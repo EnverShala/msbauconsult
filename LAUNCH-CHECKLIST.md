@@ -21,6 +21,12 @@ Stand: 2026-06-26
   - DNS der Domain `ms-bauconsult.de` auf den Hosting-Server zeigen lassen
   - SSL-Zertifikat aktivieren (HTTPS)
 
+- [ ] **CSP beim Hoster prüfen (Wärmepumpen-Check)**
+  - Die Live-Domain setzt aktuell serverseitig eine eigene Content-Security-Policy, die `https://heizreport.de` blockiert
+  - Falls der Hoster (Panel oder Server-Konfiguration) eine eigene CSP setzt: dort `https://heizreport.de` in `script-src` ergänzen — idealerweise die komplette Policy aus der `.htaccess` übernehmen
+  - Wichtig: Zwei parallele CSP-Header wirken als Schnittmenge (restriktivste Kombination gewinnt) — die `.htaccess` allein reicht dann nicht
+  - Nach Anpassung live testen: „Wärmepumpen-Check laden" klicken, Browser-Konsole muss frei von CSP-Fehlern sein
+
 ---
 
 ## Empfohlen vor Go-Live
