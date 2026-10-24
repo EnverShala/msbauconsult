@@ -26,7 +26,11 @@ export function startServer(rootDir) {
     try {
       pathname = decodeURIComponent(req.url.split('?')[0].split('#')[0]);
     } catch {
-      res.writeHead(400).end();
+      res.writeHead(400).end('Bad request');
+      return;
+    }
+    if (pathname.includes('\0')) {
+      res.writeHead(400).end('Bad request');
       return;
     }
     if (pathname === '/') pathname = '/index.html';
