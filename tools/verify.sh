@@ -45,8 +45,14 @@ check final-untouched untouched
 
 # 5. Pixelvergleich (Toleranz 3/255)
 # Veraltete Screenshots entfernen, damit ein fehlgeschlagener Capture nie gegen alte PNGs besteht
-PY=${PYTHON:-python3}
-command -v "$PY" >/dev/null 2>&1 || PY=python
+# Interpreter: $PYTHON, sonst der erste von python3/python, der numpy importieren kann
+PY=${PYTHON:-}
+if [ -z "$PY" ]; then
+  for c in python3 python; do
+    if command -v "$c" >/dev/null 2>&1 && "$c" -c 'import numpy' >/dev/null 2>&1; then PY=$c; break; fi
+  done
+fi
+PY=${PY:-python3}
 rm -rf "$OUT"; mkdir -p "$OUT"
 check capture node tools/shoot.mjs index.html "$OUT" new
 check parity-1440 "$PY" tools/diff.py "$BASE/ref-1440.png" "$OUT/new-1440.png" --tol 3
