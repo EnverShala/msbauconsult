@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Von Berg & Chastain | High-End Civil Engineering Studio</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        alabaster: '#FBFBF9',
+                        pearl: '#F3F3EE',
+                        'light-card': '#FFFFFF',
+                        charcoal: '#1A1C23',
+                        slate: {
+                            600: '#5A6072',
+                            700: '#3D4251',
+                            800: '#282C37'
+                        },
+                        gold: {
+                            100: '#FFFDF5',
+                            300: '#E5C671',
+                            400: '#D4AF37',
+                            500: '#C59B27',
+                            600: '#9E7A1B',
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['Cinzel', 'serif'],
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Light Luxe Glassmorphism */
+        .glass-light {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(212, 175, 55, 0.25);
+        }
+        
+        .glass-card-light {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 248, 243, 0.95) 100%);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(212, 175, 55, 0.18);
+            box-shadow: 0 20px 40px -15px rgba(26, 28, 35, 0.05);
+        }
+
+        /* Gold Shimmer Text for Light Backgrounds */
+        .shimmer-text-light {
+            background: linear-gradient(90deg, #1A1C23 0%, #C59B27 35%, #D4AF37 50%, #C59B27 65%, #1A1C23 100%);
+            background-size: 200% auto;
+            color: transparent;
+            -webkit-background-clip: text;
+            animation: shimmer 6s linear infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        /* MagicUI Continuous Light Border Beam */
+        .border-beam-container {
+            position: relative;
+            border-radius: inherit;
+            overflow: hidden;
+        }
+        .border-beam-container::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            background: conic-gradient(from 0deg, transparent 0%, transparent 70%, #D4AF37 85%, #E5C671 92%, transparent 100%);
+            animation: rotate-beam 5s linear infinite;
+            z-index: 0;
+        }
+        .border-beam-inner {
+            position: relative;
+            z-index: 1;
+            background: #FFFFFF;
+            height: 100%;
+            width: 100%;
+            border-radius: inherit;
+        }
+
+        @keyframes rotate-beam {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Light Luxe Buttons */
+        .vbc-btn-c-primary-light {
+            position: relative;
+            background: #FFFFFF;
+            border: 1px solid rgba(212, 175, 55, 0.6);
+            color: #1A1C23;
+            border-radius: 9999px;
+            padding: 0.875rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 25px -5px rgba(212, 175, 55, 0.25);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .vbc-btn-c-primary-light:hover {
+            border-color: #C59B27;
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px -5px rgba(212, 175, 55, 0.4);
+            color: #C59B27;
+        }
+
+        .vbc-btn-c-secondary-light {
+            position: relative;
+            background: rgba(243, 243, 238, 0.8);
+            border: 1px solid rgba(26, 28, 35, 0.12);
+            color: #3D4251;
+            border-radius: 9999px;
+            padding: 0.875rem 2rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .vbc-btn-c-secondary-light:hover {
+            border-color: rgba(212, 175, 55, 0.5);
+            color: #C59B27;
+            background: #FFFFFF;
+        }
+
+        .architectural-grid-light {
+            background-size: 50px 50px;
+            background-image: 
+                linear-gradient(to right, rgba(212, 175, 55, 0.06) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(212, 175, 55, 0.06) 1px, transparent 1px);
+        }
+
+        #particles-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+    </style>
+</head>
+<body class="bg-alabaster text-charcoal font-sans selection:bg-gold-400 selection:text-white overflow-x-hidden relative">
+
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- FLOATING NAVIGATION -->
+    <nav class="fixed top-6 left-0 w-full z-50 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="glass-light rounded-full px-8 py-3.5 flex items-center justify-between border border-gold-400/30 shadow-xl">
+                
+                <!-- Brand Logo -->
+                <a href="#" class="flex items-center gap-3 group">
+                    <div class="w-10 h-10 border border-gold-500/40 flex items-center justify-center rounded-full transition-transform group-hover:rotate-180 duration-700 bg-gold-100">
+                        <span class="font-serif font-bold text-gold-600 text-sm">VBC</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="font-serif font-bold text-base tracking-widest text-charcoal">VON BERG & CHASTAIN</span>
+                        <span class="text-[8px] uppercase tracking-[0.3em] text-gold-600 font-semibold">Civil Engineering Studio</span>
+                    </div>
+                </a>
+
+                <!-- Nav Links -->
+                <div class="hidden lg:flex items-center gap-8 text-xs font-semibold uppercase tracking-widest text-slate-700">
+                    <a href="#about" class="hover:text-gold-600 transition-colors">Über Uns</a>
+                    <a href="#services" class="hover:text-gold-600 transition-colors">Leistungen</a>
+                    <a href="#portfolio" class="hover:text-gold-600 transition-colors">Megastrukturen</a>
+                    <a href="#calculator" class="hover:text-gold-600 transition-colors">Statik-Rechner</a>
+                </div>
+
+                <!-- Action Button -->
+                <div class="hidden sm:block">
+                    <a href="#contact" class="vbc-btn-c-primary-light text-xs tracking-wider uppercase">
+                        <span class="flex items-center gap-2">
+                            <span>Projekt Anfragen</span>
+                            <i data-lucide="arrow-up-right" class="w-4 h-4 text-gold-600"></i>
+                        </span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <section class="relative min-h-screen flex items-center pt-36 pb-20 architectural-grid-light overflow-hidden">
+        
+        <!-- Megastructure Background Image -->
+        <div class="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?q=80&w=2000&auto=format&fit=crop" alt="High-End Civil Engineering" class="w-full h-full object-cover object-center opacity-15 mix-blend-multiply">
+            <div class="absolute inset-0 bg-gradient-to-r from-alabaster via-alabaster/90 to-alabaster/70"></div>
+            <div class="absolute inset-0 bg-gradient-to-b from-alabaster/60 via-transparent to-alabaster"></div>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-6 relative z-10 w-full">
+            <div class="grid lg:grid-cols-12 gap-12 items-center">
+                
+                <!-- Left Text Column -->
+                <div class="lg:col-span-7 space-y-8">
+                    <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full glass-card-light border border-gold-400/40">
+                        <span class="w-2 h-2 rounded-full bg-gold-500 animate-pulse"></span>
+                        <span class="text-xs uppercase tracking-widest text-gold-600 font-semibold">Exzellenz in Tragwerksplanung & BIM</span>
+                    </div>
+
+                    <h1 class="font-serif text-4xl sm:text-6xl lg:text-7xl font-semibold text-charcoal leading-[1.1] tracking-tight">
+                        Statik für <br>
+                        <span class="shimmer-text-light italic font-normal">ikonische</span> Bauwerke.
+                    </h1>
+
+                    <p class="text-slate-600 text-lg md:text-xl max-w-2xl font-light leading-relaxed">
+                        Wir vereinen Ästhetik, statische Höchstleistung und digitale Präzision. Führendes Ingenieurbüro für kühne Hochhausbauten, Freiform-Fassaden und Spezialtiefbau.
+                    </p>
+
+                    <!-- Option C Buttons -->
+                    <div class="flex flex-wrap items-center gap-5 pt-2">
+                        <a href="#calculator" class="vbc-btn-c-primary-light text-sm">
+                            <span class="flex items-center gap-2">
+                                <span>Statische Machbarkeit Prüfen</span>
+                                <i data-lucide="arrow-right" class="w-4 h-4 text-gold-600"></i>
+                            </span>
+                        </a>
+
+                        <a href="#about" class="vbc-btn-c-secondary-light text-sm">
+                            <span class="flex items-center gap-2">
+                                <span>Führungsteam Kennenlernen</span>
+                                <i data-lucide="user" class="w-4 h-4 text-slate-700"></i>
+                            </span>
+                        </a>
+                    </div>
+
+                    <!-- Telemetry Stats -->
+                    <div class="grid grid-cols-3 gap-6 pt-8 border-t border-slate-200">
+                        <div>
+                            <div class="font-serif text-3xl font-bold text-gold-600">€4.8B+</div>
+                            <div class="text-[11px] text-slate-600 uppercase tracking-wider mt-1 font-medium">Betreutes Bauvolumen</div>
+                        </div>
+                        <div>
+                            <div class="font-serif text-3xl font-bold text-charcoal">100%</div>
+                            <div class="text-[11px] text-slate-600 uppercase tracking-wider mt-1 font-medium">Prüfstatische Abnahme</div>
+                        </div>
+                        <div>
+                            <div class="font-serif text-3xl font-bold text-gold-600">142</div>
+                            <div class="text-[11px] text-slate-600 uppercase tracking-wider mt-1 font-medium">Internationale Preise</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Founder Portrait Area -->
+                <div class="lg:col-span-5">
+                    <div class="border-beam-container rounded-3xl p-[1px] shadow-2xl">
+                        <div class="border-beam-inner p-6 md:p-8 rounded-3xl space-y-6">
+                            
+                            <!-- Founder Portrait Image -->
+                            <div class="relative h-72 md:h-80 rounded-2xl overflow-hidden border border-gold-400/30 group">
+                                <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=1000&auto=format&fit=crop" alt="Dr.-Ing. Maximilian Von Berg" class="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105">
+                                <div class="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-transparent to-transparent"></div>
+                                
+                                <div class="absolute bottom-4 left-4 right-4">
+                                    <div class="glass-light p-3 rounded-xl border border-gold-400/40">
+                                        <div class="font-serif font-bold text-charcoal text-base">Dr.-Ing. Maximilian Von Berg</div>
+                                        <div class="text-xs text-gold-600 font-semibold">Gründer & Chief Civil Structural Engineer</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Founder Quote -->
+                            <blockquote class="text-xs text-slate-700 italic leading-relaxed border-l-2 border-gold-500 pl-4">
+                                "Ein funktionierendes Tragwerk ist wie Musik in Beton und Stahl – unsichtbar in seiner Perfektion, aber das Fundament für Jahrhunderte."
+                            </blockquote>
+
+                            <div class="pt-2 flex items-center justify-between text-xs font-mono text-slate-600 border-t border-slate-100">
+                                <span>AKKREDITIERTER PRÜFINGENIEUR</span>
+                                <span class="text-gold-600 font-semibold">ISO 9001 ZERTIFIZIERT</span>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- SPOTLIGHT SERVICES SECTION -->
+    <section id="services" class="py-24 relative z-10 bg-pearl/60 border-t border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-6">
+            
+            <div class="text-center max-w-3xl mx-auto space-y-4 mb-16">
+                <span class="text-xs font-mono text-gold-600 uppercase tracking-widest font-semibold">// Spezialisierte Ingenieurskunst</span>
+                <h2 class="font-serif text-3xl md:text-5xl font-semibold text-charcoal">Leistungsspektrum</h2>
+                <p class="text-slate-600 font-light">Ganzheitliche Betreuung komplexer Großbauvorhaben von der ersten Parameter-Studie bis zur Bauüberwachung.</p>
+            </div>
+
+            <!-- Spotlight Cards -->
+            <div class="grid md:grid-cols-3 gap-8">
+                
+                <div class="spotlight-card rounded-2xl glass-card-light p-8 transition-all duration-300 relative group">
+                    <div class="w-14 h-14 rounded-xl bg-gold-100 border border-gold-400/40 flex items-center justify-center text-gold-600 mb-6">
+                        <i data-lucide="building-2" class="w-7 h-7"></i>
+                    </div>
+                    <h3 class="font-serif text-xl font-semibold text-charcoal mb-3">High-Rise Structural Engineering</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed mb-6">
+                        Tragwerksplanung extremer Gebäudehöhen und komplexer Schwingungsdämpfungssysteme unter Erdbeben- und Windlasten.
+                    </p>
+                    <a href="#" class="vbc-btn-c-secondary-light text-xs w-full">Mehr Erfahren</a>
+                </div>
+
+                <div class="spotlight-card rounded-2xl glass-card-light p-8 transition-all duration-300 relative group">
+                    <div class="w-14 h-14 rounded-xl bg-gold-100 border border-gold-400/40 flex items-center justify-center text-gold-600 mb-6">
+                        <i data-lucide="layers" class="w-7 h-7"></i>
+                    </div>
+                    <h3 class="font-serif text-xl font-semibold text-charcoal mb-3">Freiform- & Fassadenstatik</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-6">
+                        Berechnung organischer Stahl-Glas-Konstruktionen mittels hochentwickelter Finiten-Elemente-Methoden (FEM).
+                    </p>
+                    <a href="#" class="vbc-btn-c-secondary-light text-xs w-full">Mehr Erfahren</a>
+                </div>
+
+                <div class="spotlight-card rounded-2xl glass-card-light p-8 transition-all duration-300 relative group">
+                    <div class="w-14 h-14 rounded-xl bg-gold-100 border border-gold-400/40 flex items-center justify-center text-gold-600 mb-6">
+                        <i data-lucide="cpu" class="w-7 h-7"></i>
+                    </div>
+                    <h3 class="font-serif text-xl font-semibold text-charcoal mb-3">Digital Twin & 7D BIM</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed mb-6">
+                        Echtzeit-Sensorüberwachung und digitale Zwillinge zur Lebensdauerprognose von kritischer Infrastruktur.
+                    </p>
+                    <a href="#" class="vbc-btn-c-secondary-light text-xs w-full">Mehr Erfahren</a>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- CALCULATOR SECTION -->
+    <section id="calculator" class="py-24 relative z-10">
+        <div class="max-w-5xl mx-auto px-6">
+            <div class="border-beam-container rounded-3xl p-[1px] shadow-xl">
+                <div class="border-beam-inner p-8 md:p-12 rounded-3xl bg-white space-y-8">
+                    
+                    <div class="text-center space-y-2">
+                        <span class="text-xs font-mono text-gold-600 uppercase tracking-widest font-semibold">// Statik-Analyse Tool</span>
+                        <h2 class="font-serif text-2xl md:text-4xl font-semibold text-charcoal">Projekt-Komplexitäts-Rechner</h2>
+                        <p class="text-slate-600 text-sm">Errechnen Sie erste Parameter für Statikanforderungen und Planungsaufwand.</p>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-8 items-center pt-4">
+                        <div class="space-y-6">
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-700 font-medium mb-2">
+                                    <span>Bruttogrundfläche (m²)</span>
+                                    <span id="area-val" class="font-mono text-gold-600 font-bold">15.000 m²</span>
+                                </div>
+                                <input type="range" min="1000" max="50000" value="15000" step="500" class="w-full accent-gold-500 bg-slate-200 rounded h-2" id="area-input">
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-700 font-medium mb-2">
+                                    <span>Anzahl Geschosse</span>
+                                    <span id="floors-val" class="font-mono text-gold-600 font-bold">22 Etagen</span>
+                                </div>
+                                <input type="range" min="1" max="60" value="22" step="1" class="w-full accent-gold-500 bg-slate-200 rounded h-2" id="floors-input">
+                            </div>
+
+                            <div>
+                                <label class="text-xs text-slate-700 font-medium block mb-2">Bauwerkstypologie</label>
+                                <select id="type-input" class="w-full bg-pearl border border-slate-300 rounded-lg p-3 text-sm text-charcoal focus:border-gold-500 focus:outline-none">
+                                    <option value="1.0">Standard Hochbau (Wohnen/Büro)</option>
+                                    <option value="1.35" selected>Komplexe Freiform / Hybrid-Holz-Beton</option>
+                                    <option value="1.7">Weitgespannte Spezialbrücke / Megastruktur</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="glass-light p-6 rounded-2xl border border-gold-400/30 text-center space-y-4">
+                            <span class="text-xs text-slate-600 uppercase tracking-widest block font-medium">Anforderungsprofil</span>
+                            <div id="result-score" class="font-serif text-4xl font-bold text-gold-600">CLASS A+</div>
+                            <div class="text-xs text-slate-700 font-mono space-y-1">
+                                <div>Geschätztes Bauvolumen: <span id="vol-calc" class="text-charcoal font-bold">€ 69.3M</span></div>
+                                <div>FEM Sim-Stunden: <span id="hours-calc" class="text-charcoal font-bold">564h</span></div>
+                            </div>
+                            
+                            <div class="pt-2">
+                                <a href="#contact" class="vbc-btn-c-primary-light w-full text-xs">
+                                    <span>Beratungstermin Vereinbaren</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-pearl border-t border-slate-200 py-12 relative z-10 text-xs text-slate-600">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 border border-gold-500/40 flex items-center justify-center rounded-full bg-white">
+                    <span class="font-serif font-bold text-gold-600 text-xs">VBC</span>
+                </div>
+                <span class="text-charcoal font-serif font-semibold">Von Berg & Chastain Civil Engineering</span>
+            </div>
+            
+            <div class="flex gap-6">
+                <a href="#" class="hover:text-gold-600 transition-colors">Impressum</a>
+                <a href="#" class="hover:text-gold-600 transition-colors">Datenschutz</a>
+                <a href="#" class="hover:text-gold-600 transition-colors">Prüfstatiker-Verzeichnis</a>
+            </div>
+
+            <div>
+                © 2026 Von Berg & Chastain. Alle Rechte vorbehalten.
+            </div>
+        </div>
+    </footer>
+
+    <!-- INTERACTIVE SCRIPTS -->
+    <script>
+        lucide.createIcons();
+
+        // Spotlight Mouse Effect
+        document.querySelectorAll('.spotlight-card').forEach(card => {
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.background = `radial-gradient(600px circle at ${x}px ${y}px, rgba(212, 175, 55, 0.12), rgba(255, 255, 255, 0.95) 40%)`;
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 248, 243, 0.95) 100%)';
+            });
+        });
+
+        // Calculator Input Handling
+        const areaInput = document.getElementById('area-input');
+        const floorsInput = document.getElementById('floors-input');
+        const typeInput = document.getElementById('type-input');
+
+        function updateCalc() {
+            const area = parseInt(areaInput.value);
+            const floors = parseInt(floorsInput.value);
+            const factor = parseFloat(typeInput.value);
+
+            document.getElementById('area-val').innerText = area.toLocaleString('de-DE') + ' m²';
+            document.getElementById('floors-val').innerText = floors + ' Etagen';
+
+            const baseVol = (area * floors * 210) * factor;
+            const hours = Math.round((area / 55 + floors * 14) * factor);
+            
+            document.getElementById('vol-calc').innerText = '€ ' + (baseVol / 1000000).toFixed(1) + 'M';
+            document.getElementById('hours-calc').innerText = hours + 'h';
+
+            const scoreElem = document.getElementById('result-score');
+            if (factor > 1.5 || floors > 35) {
+                scoreElem.innerText = 'CLASS S (EXOTIC)';
+            } else if (factor > 1.2 || floors > 18) {
+                scoreElem.innerText = 'CLASS A+';
+            } else {
+                scoreElem.innerText = 'CLASS A';
+            }
+        }
+
+        [areaInput, floorsInput, typeInput].forEach(el => el.addEventListener('input', updateCalc));
+
+        // Floating Particles Animation Background
+        const canvas = document.getElementById('particles-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 1.5 + 0.5;
+                this.speedX = (Math.random() - 0.5) * 0.3;
+                this.speedY = (Math.random() - 0.5) * 0.3;
+                this.opacity = Math.random() * 0.4 + 0.1;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+            }
+            draw() {
+                ctx.fillStyle = `rgba(197, 155, 39, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < 40; i++) {
+            particles.push(new Particle());
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+    </script>
+</body>
+</html>

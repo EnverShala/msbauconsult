@@ -37,15 +37,21 @@ external() {
 check static-external external
 
 # 4. final.html unveraendert
-untouched() { [ "$(wc -c < final.html | tr -d ' ')" -eq 26965 ]; }
+FINAL_SHA=df448ef592d70447b5b68ca11fa38c79ee1547d8ba263dbc55753ae06116fc1f
+sha_of() { if command -v sha256sum >/dev/null 2>&1; then sha256sum | cut -d' ' -f1; else shasum -a 256 | cut -d' ' -f1; fi; }
+# Zeilenenden (CRLF/LF) werden vor dem Hash normalisiert
+untouched() { [ "$(tr -d '\r' < final.html | sha_of)" = "$FINAL_SHA" ]; }
 check final-untouched untouched
 
 # 5. Pixelvergleich (Toleranz 3/255)
-mkdir -p "$OUT"
-node tools/shoot.mjs index.html "$OUT" new >/dev/null 2>&1 || echo "shoot.mjs fehlgeschlagen"
-check parity-1440 python tools/diff.py "$BASE/ref-1440.png" "$OUT/new-1440.png" --tol 3
-check parity-375 python tools/diff.py "$BASE/ref-375.png" "$OUT/new-375.png" --tol 3
-check parity-hover python tools/diff.py "$BASE/ref-hover-1440.png" "$OUT/new-hover-1440.png" --tol 3
+# Veraltete Screenshots entfernen, damit ein fehlgeschlagener Capture nie gegen alte PNGs besteht
+PY=${PYTHON:-python3}
+command -v "$PY" >/dev/null 2>&1 || PY=python
+rm -rf "$OUT"; mkdir -p "$OUT"
+check capture node tools/shoot.mjs index.html "$OUT" new
+check parity-1440 "$PY" tools/diff.py "$BASE/ref-1440.png" "$OUT/new-1440.png" --tol 3
+check parity-375 "$PY" tools/diff.py "$BASE/ref-375.png" "$OUT/new-375.png" --tol 3
+check parity-hover "$PY" tools/diff.py "$BASE/ref-hover-1440.png" "$OUT/new-hover-1440.png" --tol 3
 
 # 6. Netzwerk
 check network node tools/netcheck.mjs index.html
