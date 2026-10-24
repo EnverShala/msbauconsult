@@ -17,12 +17,20 @@
   Einzelne Icons stammen aus dem Feather-Projekt: The MIT License (MIT), Copyright (c) 2013-present Cole Bemis.
   Quelle: https://github.com/lucide-icons/lucide
   SVG-Markup inline in `index.html`, keine Bibliothek eingebunden.
+  Verwendete Icons (ergänzt in Phase 2): hard-hat, zap, badge-euro, file-badge, route, clipboard-list, phone, mail, map-pin, ruler, handshake, user-check.
 
 ## Bilder
 
-- **Platzhalter-Porträt** – Unsplash, Foto-ID `photo-1560250097-0b93528c311a`, Unsplash License.
-  Urheber nicht ermittelbar. Platzhalter in Phase 1, wird in Phase 2 durch das Porträt von Muhamed Shala ersetzt.
-  Datei: `assets/img/portrait.webp`.
+- **Porträt** – Foto: Muhamed Shala (Inhaber), bereitgestellt vom Auftraggeber; Rechte beim Auftraggeber (Fotograf nicht dokumentiert).
+  Dateien: `assets/img/portrait-*.avif`, `assets/img/portrait-*.webp`, `assets/img/portrait-800.jpg`, `assets/img/og.jpg`.
+  Quelle: `tools/assets-src/muhamedshala.jpg`.
+- **dena-Badge** – Zeichen „Energieeffizienz-Experte für Förderprogramme des Bundes“, © Deutsche Energie-Agentur (dena).
+  Nutzung als gelisteter Experte durch den Auftraggeber (Nutzungsbedingungen vor Livegang bestätigen).
+  Datei: `assets/img/eee.png`. Quelle: `tools/assets-src/eee-300x73.png`.
+- **Hero-Variante (optional)** – „Floor Plan on White Paper“ von ANTONI SHKRABA production,
+  https://www.pexels.com/photo/floor-plan-on-white-paper-8837511/, Pexels License
+  (https://www.pexels.com/license/; kommerziell frei, keine Namensnennung erforderlich).
+  Dateien: `assets/img/hero/*`. Standardmäßig nicht eingebunden.
 
 ## Logo
 
