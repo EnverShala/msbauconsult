@@ -10,37 +10,6 @@
         });
     });
 
-    // Rechner
-    const areaInput = document.getElementById('area-input');
-    const floorsInput = document.getElementById('floors-input');
-    const typeInput = document.getElementById('type-input');
-
-    function updateCalc() {
-        const area = parseInt(areaInput.value);
-        const floors = parseInt(floorsInput.value);
-        const factor = parseFloat(typeInput.value);
-
-        document.getElementById('area-val').textContent = area.toLocaleString('de-DE') + ' m²';
-        document.getElementById('floors-val').textContent = floors + ' Etagen';
-
-        const baseVol = (area * floors * 210) * factor;
-        const hours = Math.round((area / 55 + floors * 14) * factor);
-
-        document.getElementById('vol-calc').textContent = '€ ' + (baseVol / 1000000).toFixed(1) + 'M';
-        document.getElementById('hours-calc').textContent = hours + 'h';
-
-        const scoreElem = document.getElementById('result-score');
-        if (factor > 1.5 || floors > 35) {
-            scoreElem.textContent = 'CLASS S (EXOTIC)';
-        } else if (factor > 1.2 || floors > 18) {
-            scoreElem.textContent = 'CLASS A+';
-        } else {
-            scoreElem.textContent = 'CLASS A';
-        }
-    }
-
-    [areaInput, floorsInput, typeInput].forEach(el => el.addEventListener('input', updateCalc));
-
     // Partikel-Hintergrund (pausiert bei verstecktem Tab, statisch bei reduzierter Bewegung)
     const canvas = document.getElementById('particles-canvas');
     const ctx = canvas.getContext('2d');

@@ -81,7 +81,7 @@
     }
 
     /* Light Luxe Buttons */
-    .vbc-btn-c-primary-light {
+    .btn-primary {
         position: relative;
         background: #FFFFFF;
         border: 1px solid rgba(212, 175, 55, 0.6);
@@ -96,14 +96,14 @@
         justify-content: center;
         overflow: hidden;
     }
-    .vbc-btn-c-primary-light:hover {
+    .btn-primary:hover {
         border-color: #C59B27;
         transform: translateY(-2px);
         box-shadow: 0 15px 30px -5px rgba(212, 175, 55, 0.4);
         color: #C59B27;
     }
 
-    .vbc-btn-c-secondary-light {
+    .btn-secondary {
         position: relative;
         background: rgba(243, 243, 238, 0.8);
         border: 1px solid rgba(26, 28, 35, 0.12);
@@ -116,7 +116,7 @@
         align-items: center;
         justify-content: center;
     }
-    .vbc-btn-c-secondary-light:hover {
+    .btn-secondary:hover {
         border-color: rgba(212, 175, 55, 0.5);
         color: #C59B27;
         background: #FFFFFF;
@@ -147,5 +147,5 @@
 @media (prefers-reduced-motion: reduce){
   .shimmer-text-light{animation:none;background-position:50% 0}
   .border-beam-container::before{animation:none}
-  .vbc-btn-c-primary-light:hover{transform:none}
+  .btn-primary:hover{transform:none}
 }
