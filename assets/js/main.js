@@ -60,8 +60,10 @@
         update() {
             this.x += this.speedX;
             this.y += this.speedY;
-            if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
-            if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+            if (this.x < 0) { this.x = 0; this.speedX = Math.abs(this.speedX); }
+            else if (this.x > canvas.width) { this.x = canvas.width; this.speedX = -Math.abs(this.speedX); }
+            if (this.y < 0) { this.y = 0; this.speedY = Math.abs(this.speedY); }
+            else if (this.y > canvas.height) { this.y = canvas.height; this.speedY = -Math.abs(this.speedY); }
         }
         draw() {
             ctx.fillStyle = `rgba(197, 155, 39, ${this.opacity})`;
@@ -97,19 +99,25 @@
     function resizeCanvas() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+        particles.forEach(p => {
+            p.x = Math.min(p.x, canvas.width);
+            p.y = Math.min(p.y, canvas.height);
+        });
         if (reduceMotion.matches) drawFrame();
     }
 
     window.addEventListener('resize', resizeCanvas);
     document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
-    reduceMotion.addEventListener('change', () => {
+    const onMotionChange = () => {
         if (reduceMotion.matches) {
             stop();
             drawFrame();
         } else {
             start();
         }
-    });
+    };
+    if (reduceMotion.addEventListener) reduceMotion.addEventListener('change', onMotionChange);
+    else if (reduceMotion.addListener) reduceMotion.addListener(onMotionChange);
 
     resizeCanvas();
     for (let i = 0; i < 40; i++) {
