@@ -1,0 +1,151 @@
+@tailwind base;
+@tailwind components;
+
+@font-face {
+  font-family: 'Cinzel';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url(../fonts/cinzel.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url(../fonts/pjs.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url(../fonts/pjs-italic.woff2) format('woff2');
+}
+
+    /* Light Luxe Glassmorphism */
+    .glass-light {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(212, 175, 55, 0.25);
+    }
+    
+    .glass-card-light {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 248, 243, 0.95) 100%);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(212, 175, 55, 0.18);
+        box-shadow: 0 20px 40px -15px rgba(26, 28, 35, 0.05);
+    }
+
+    /* Gold Shimmer Text for Light Backgrounds */
+    .shimmer-text-light {
+        background: linear-gradient(90deg, #1A1C23 0%, #C59B27 35%, #D4AF37 50%, #C59B27 65%, #1A1C23 100%);
+        background-size: 200% auto;
+        color: transparent;
+        -webkit-background-clip: text;
+        animation: shimmer 6s linear infinite;
+    }
+
+    @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+    }
+
+    /* MagicUI Continuous Light Border Beam */
+    .border-beam-container {
+        position: relative;
+        border-radius: inherit;
+        overflow: hidden;
+    }
+    .border-beam-container::before {
+        content: '';
+        position: absolute;
+        inset: -2px;
+        background: conic-gradient(from 0deg, transparent 0%, transparent 70%, #D4AF37 85%, #E5C671 92%, transparent 100%);
+        animation: rotate-beam 5s linear infinite;
+        z-index: 0;
+    }
+    .border-beam-inner {
+        position: relative;
+        z-index: 1;
+        background: #FFFFFF;
+        height: 100%;
+        width: 100%;
+        border-radius: inherit;
+    }
+
+    @keyframes rotate-beam {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    /* Light Luxe Buttons */
+    .vbc-btn-c-primary-light {
+        position: relative;
+        background: #FFFFFF;
+        border: 1px solid rgba(212, 175, 55, 0.6);
+        color: #1A1C23;
+        border-radius: 9999px;
+        padding: 0.875rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 25px -5px rgba(212, 175, 55, 0.25);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    .vbc-btn-c-primary-light:hover {
+        border-color: #C59B27;
+        transform: translateY(-2px);
+        box-shadow: 0 15px 30px -5px rgba(212, 175, 55, 0.4);
+        color: #C59B27;
+    }
+
+    .vbc-btn-c-secondary-light {
+        position: relative;
+        background: rgba(243, 243, 238, 0.8);
+        border: 1px solid rgba(26, 28, 35, 0.12);
+        color: #3D4251;
+        border-radius: 9999px;
+        padding: 0.875rem 2rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .vbc-btn-c-secondary-light:hover {
+        border-color: rgba(212, 175, 55, 0.5);
+        color: #C59B27;
+        background: #FFFFFF;
+    }
+
+    .architectural-grid-light {
+        background-size: 50px 50px;
+        background-image: 
+            linear-gradient(to right, rgba(212, 175, 55, 0.06) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(212, 175, 55, 0.06) 1px, transparent 1px);
+    }
+
+    #particles-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+/* Spotlight-Karten (ersetzt das frühere Inline-Style, CSP) */
+.spotlight-card:hover{background:radial-gradient(600px circle at var(--x,50%) var(--y,50%),rgba(212,175,55,.12),rgba(255,255,255,.95) 40%)}
+
+@tailwind utilities;
+
+@media (prefers-reduced-motion: reduce){
+  .shimmer-text-light{animation:none;background-position:50% 0}
+  .border-beam-container::before{animation:none}
+  .vbc-btn-c-primary-light:hover{transform:none}
+}
