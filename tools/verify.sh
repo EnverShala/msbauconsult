@@ -1,11 +1,10 @@
 #!/bin/sh
-# Ein-Befehl-Abnahme fuer Phase 1 (vom Projektstamm ausfuehren: sh tools/verify.sh)
+# Ein-Befehl-Abnahme fuer Phase 2 (vom Projektstamm ausfuehren: sh tools/verify.sh)
 set -u
 cd "$(dirname "$0")/.."
 
 FAILS=0
-BASE=.planning/phases/01-fundament/baseline
-OUT=tools/out/new
+REVIEW=.planning/phases/02-inhalte-neue-sektionen/review
 
 pass() { echo "PASS $1"; }
 fail() { echo "FAIL $1"; FAILS=$((FAILS + 1)); }
@@ -17,11 +16,11 @@ check() { # check <name> <command...>
 # 1. build
 check build sh build.sh
 
-# 2. SEC-02: kein Inline-Code
+# 2. SEC-02: kein Inline-Code (JSON-LD ist ein Datenblock, kein ausfuehrbares Script)
 sec02() {
   n=$(grep -ciE '<style|style=| on[a-z]+=|data-lucide' index.html)
   [ "$n" -eq 0 ] || { echo "  inline-treffer: $n"; return 1; }
-  bad=$(grep -i '<script' index.html | grep -vc 'src=')
+  bad=$(grep -i '<script' index.html | grep -v 'src=' | grep -vc 'application/ld+json')
   [ "$bad" -eq 0 ] || { echo "  inline-script: $bad"; return 1; }
 }
 check static-sec02 sec02
@@ -31,7 +30,8 @@ external() {
   n=$(cat index.html assets/css/main.css assets/js/main.js | grep -ciE 'cdn\.tailwindcss|unpkg|googleapis|gstatic|unsplash')
   [ "$n" -eq 0 ] || { echo "  externe hosts: $n"; return 1; }
   # Lizenzkommentar von Tailwind (/*! ... */) ist keine Anfrage und wird vorher entfernt
-  urls=$(sed 's#/\*![^*]*\*/##' assets/css/main.css | cat index.html - assets/js/main.js | grep -ohE "https?://[^\"' )]+" | grep -v '^http://www.w3.org/2000/svg$' || true)
+  # Erlaubt: SVG-Namespace, eigene Domain (canonical/OG/JSON-LD), schema.org-Kontext
+  urls=$(sed 's#/\*![^*]*\*/##' assets/css/main.css | cat index.html - assets/js/main.js | grep -ohE "https?://[^\"' )]+" | grep -v '^http://www.w3.org/2000/svg$' | grep -vE '^https://(www\.ms-bauconsult\.de(/|$)|schema\.org$)' || true)
   [ -z "$urls" ] || { echo "  fremde URLs: $urls"; return 1; }
 }
 check static-external external
@@ -43,31 +43,36 @@ sha_of() { if command -v sha256sum >/dev/null 2>&1; then sha256sum | cut -d' ' -
 untouched() { [ "$(tr -d '\r' < final.html | sha_of)" = "$FINAL_SHA" ]; }
 check final-untouched untouched
 
-# 5. Pixelvergleich (Toleranz 3/255)
-# Veraltete Screenshots entfernen, damit ein fehlgeschlagener Capture nie gegen alte PNGs besteht
-# Interpreter: $PYTHON, sonst der erste von python3/python, der numpy importieren kann
-PY=${PYTHON:-}
-if [ -z "$PY" ]; then
-  for c in python3 python; do
-    if command -v "$c" >/dev/null 2>&1 && "$c" -c 'import numpy' >/dev/null 2>&1; then PY=$c; break; fi
-  done
-fi
-PY=${PY:-python3}
-rm -rf "$OUT"; mkdir -p "$OUT"
-check capture node tools/shoot.mjs index.html "$OUT" new
-check parity-1440 "$PY" tools/diff.py "$BASE/ref-1440.png" "$OUT/new-1440.png" --tol 3
-check parity-375 "$PY" tools/diff.py "$BASE/ref-375.png" "$OUT/new-375.png" --tol 3
-check parity-hover "$PY" tools/diff.py "$BASE/ref-hover-1440.png" "$OUT/new-hover-1440.png" --tol 3
+# 5. CONT-08: keine Platzhalter-Reste
+placeholder() {
+  hits=$(grep -rniE 'von berg|chastain|vbc|megastruktur|megastruct|statik-rechner|prüfingenieur|iso 9001|civil engineering|tragwerk|calculator|area-input|floors-input|type-input|result-score|slate-400' index.html src assets/js assets/css/main.css || true)
+  [ -z "$hits" ] || { echo "$hits"; return 1; }
+  [ ! -e assets/img/portrait.webp ] || { echo "  assets/img/portrait.webp existiert"; return 1; }
+  [ ! -e ./muhamedshala.jpg ] || { echo "  muhamedshala.jpg existiert"; return 1; }
+}
+check placeholder placeholder
 
-# 6. Netzwerk
+# 6. Struktur
+check structure node tools/structcheck.mjs index.html
+
+# 7. Computed Styles (nur Vergleich, nie --record)
+check styles node tools/stylecheck.mjs index.html
+
+# 8. Layout / Portrait-Crops
+rm -rf "$REVIEW/portrait"
+check layout node tools/layoutcheck.mjs index.html "$REVIEW/portrait"
+
+# 9. Netzwerk, Motion
 check network node tools/netcheck.mjs index.html
-
-# 7. Motion
 check motion node tools/motioncheck.mjs index.html
 
-# 8. Groessen (informativ)
+# 10. Capture (Review-Material, kein Pixelvergleich)
+rm -rf "$REVIEW/full"; mkdir -p "$REVIEW/full"
+check capture node tools/shoot.mjs index.html "$REVIEW/full" page
+
+# 11. Groessen (informativ)
 echo "--- sizes (bytes / gzip -9) ---"
-for f in index.html assets/css/main.css assets/js/main.js assets/fonts/*.woff2; do
+for f in index.html assets/css/main.css assets/js/main.js assets/fonts/*.woff2 assets/img/*.avif assets/img/*.webp assets/img/*.jpg assets/img/*.png; do
   [ -f "$f" ] && echo "$f $(wc -c < "$f" | tr -d ' ') $(gzip -9 -c "$f" | wc -c | tr -d ' ')"
 done
 
