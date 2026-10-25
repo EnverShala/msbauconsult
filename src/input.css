@@ -46,6 +46,13 @@
         -webkit-background-clip: text;
         animation: shimmer 6s linear infinite;
     }
+    /* Kursive Glyphen ragen über die Inline-Box hinaus → sonst schneidet background-clip den letzten Buchstaben ab */
+    .shimmer-text-light.italic {
+        padding: 0 .15em;
+        margin: 0 -.15em;
+        -webkit-box-decoration-break: clone;
+        box-decoration-break: clone;
+    }
 
     @keyframes shimmer {
         0% { background-position: -200% 0; }

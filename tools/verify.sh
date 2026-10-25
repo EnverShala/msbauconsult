@@ -67,13 +67,6 @@ headers_static() {
 }
 check static-headers headers_static
 
-# 4. final.html unveraendert
-FINAL_SHA=df448ef592d70447b5b68ca11fa38c79ee1547d8ba263dbc55753ae06116fc1f
-sha_of() { if command -v sha256sum >/dev/null 2>&1; then sha256sum | cut -d' ' -f1; else shasum -a 256 | cut -d' ' -f1; fi; }
-# Zeilenenden (CRLF/LF) werden vor dem Hash normalisiert
-untouched() { [ "$(tr -d '\r' < final.html | sha_of)" = "$FINAL_SHA" ]; }
-check final-untouched untouched
-
 # 5. CONT-08: keine Platzhalter-Reste
 placeholder() {
   hits=$(grep -rniE 'von berg|chastain|vbc|megastruktur|megastruct|statik-rechner|prüfingenieur|iso 9001|civil engineering|tragwerk|calculator|area-input|floors-input|type-input|result-score|slate-400' index.html src assets/js assets/css/main.css || true)

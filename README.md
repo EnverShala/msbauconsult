@@ -2,7 +2,7 @@
 
 Statische One-Page-Website für MS Bauconsult – Muhamed Shala, M.Eng. (Ingenieurbüro für Bau- & Energieberatung, Fellbach). Keine Laufzeit-Abhängigkeiten, keine externen Anfragen vor einer Nutzerinteraktion, kein Inline-Code, keine Cookies. Einziges Build-Werkzeug ist die Tailwind-v3.4.17-Standalone-CLI.
 
-Das visuelle Design (`final.html`) entstand KI-gestützt; Inhalte, Umsetzung, Barrierefreiheit, Sicherheit und Performance-Optimierung sind die Arbeit des Entwicklers. Eine kurze Portfolio-Beschreibung steht in [PORTFOLIO.md](PORTFOLIO.md).
+Das visuelle Design entstand KI-gestützt; Inhalte, Umsetzung, Barrierefreiheit, Sicherheit und Performance-Optimierung sind die Arbeit des Entwicklers. Eine kurze Portfolio-Beschreibung steht in [PORTFOLIO.md](PORTFOLIO.md).
 
 ## Build
 
@@ -22,7 +22,7 @@ Versionierung: Der Build stempelt `?v=<sha256[0:8]>` für `main.css` und `main.j
 sh tools/dist.sh
 ```
 
-`tools/dist.sh` führt zuerst `sh build.sh` aus (damit `main.css` und die `?v=`-Stempel immer zum aktuellen Stand von `index.html` und `src/input.css` passen), prüft danach die Stempel und kopiert genau die Upload-Whitelist aus `tools/dist-files.txt` nach `dist/` (per `.gitignore` ausgeschlossen). Der Inhalt von `dist/` wird per FTP in das Web-Root des Hosters geladen. Bei einer inhaltlichen Änderung von `index.html` vor dem Deploy `<lastmod>` in `sitemap.xml` von Hand auf das Änderungsdatum setzen (wird nicht automatisch gepflegt). Nicht deployt werden `final.html`, `src/`, `tools/`, `preview/`, `.planning/`, `*.md` und die Build-Dateien.
+`tools/dist.sh` führt zuerst `sh build.sh` aus (damit `main.css` und die `?v=`-Stempel immer zum aktuellen Stand von `index.html` und `src/input.css` passen), prüft danach die Stempel und kopiert genau die Upload-Whitelist aus `tools/dist-files.txt` nach `dist/` (per `.gitignore` ausgeschlossen). Der Inhalt von `dist/` wird per FTP in das Web-Root des Hosters geladen. Bei einer inhaltlichen Änderung von `index.html` vor dem Deploy `<lastmod>` in `sitemap.xml` von Hand auf das Änderungsdatum setzen (wird nicht automatisch gepflegt). Nicht deployt werden `src/`, `tools/`, `preview/`, `.planning/`, `*.md` und die Build-Dateien.
 
 Testversion auf einer anderen (Sub-)Domain, z. B. `msbauconsult.enver-shala.de`: `STAGING_HOST=msbauconsult.enver-shala.de sh tools/dist.sh` erzeugt `dist-staging/` mit Weiterleitung auf diese Domain, ohne HSTS, mit `X-Robots-Tag: noindex` und sperrender `robots.txt`. Die Seite muss im Hauptverzeichnis der (Sub-)Domain liegen, nicht in einem Unterordner (Pfade beginnen mit `/`). Achtung: Das Kontaktformular sendet auch dort echte Mails an `info@ms-bauconsult.de`.
 
@@ -74,7 +74,6 @@ tools/hardencheck.mjs Header, CSP, Storage, axe, Zielgrößen, Clipping, Tastatu
 tools/lighthouse.mjs  Lighthouse, Median aus 5 Läufen
 tools/assets-src/     Bildquellen für tools/build-images.py
 preview/              Vergleich Hero mit/ohne Foto (nur Entwicklung, nicht deployen)
-final.html            Design-Referenz, unverändert
 ```
 
 ## Prüfung (nur Entwicklung)
@@ -93,7 +92,7 @@ sh tools/verify.sh
 
 Das Ergebnis steht in der letzten Zeile: `ALL PASS` (bzw. `ALL PASS (1 WARN)`, wenn nur der Lighthouse-Performance-Median 99 statt 100 beträgt). Ein zusätzliches `WARN build-current` heißt: `index.html` oder `main.css` waren vor dem Lauf nicht frisch gebaut; `verify.sh` baut selbst, die Änderung muss danach eingecheckt werden. Mit `VERIFY_LIGHTHOUSE=0` entfällt der mehrminütige Lighthouse-Teil für schnelle Läufe.
 
-Geprüft werden: Build, kein Inline-Code, keine fremden Domains, `final.html` unverändert, keine Platzhalter, statische Regeln (Pfade, `.htaccess`, Header, Versionsstempel, Honeypot, Dialog-/Menü-/Consent-IDs, heizreport nur im Loader), Struktur/SEO (Title, Description, OG/Twitter, JSON-LD, Überschriften, alt-Texte, Linktexte, robots/sitemap), Design-Stile gegen Baseline, Layout 320–1440 px ohne horizontales Scrollen, Netzwerk (keine fremden Anfragen), Bewegung (`prefers-reduced-motion`, Hero-Animation pausiert im verdeckten Tab), Interaktion, Header und CSP (inklusive Negativtest), Cookies und Web-Storage, axe-core (0 Verstöße in allen Zuständen), Zielgrößen nach WCAG 2.5.8, Clipping, Tastatur-Durchgang, Größenbudget, Deploy-Whitelist (`dist`) und Lighthouse.
+Geprüft werden: Build, kein Inline-Code, keine fremden Domains, keine Platzhalter, statische Regeln (Pfade, `.htaccess`, Header, Versionsstempel, Honeypot, Dialog-/Menü-/Consent-IDs, heizreport nur im Loader), Struktur/SEO (Title, Description, OG/Twitter, JSON-LD, Überschriften, alt-Texte, Linktexte, robots/sitemap), Design-Stile gegen Baseline, Layout 320–1440 px ohne horizontales Scrollen, Netzwerk (keine fremden Anfragen), Bewegung (`prefers-reduced-motion`, Hero-Animation pausiert im verdeckten Tab), Interaktion, Header und CSP (inklusive Negativtest), Cookies und Web-Storage, axe-core (0 Verstöße in allen Zuständen), Zielgrößen nach WCAG 2.5.8, Clipping, Tastatur-Durchgang, Größenbudget, Deploy-Whitelist (`dist`) und Lighthouse.
 
 Einzelne Gruppen:
 
@@ -145,7 +144,7 @@ Standard ist der Hero ohne Foto. Zum Aktivieren den HTML-Kommentar um den `<pict
 - Ohne JavaScript zeigen `/impressum` und `/datenschutz` die Startseite ohne den Rechtstext, die Dialoge und der Wärmepumpen-Check brauchen JavaScript. Die Pflichtangaben stehen im HTML, werden aber erst im Dialog sichtbar.
 - Das mobile Menü (unter 1024 px) braucht JavaScript; die Abschnittsanker der Seite funktionieren ohne JavaScript weiterhin.
 - Die zwei Reload-Buttons des heizreport-Widgets arbeiten mit Inline-`onclick` und funktionieren unter der strikten CSP nicht (Seite neu laden bleibt möglich).
-- Bewusste Abweichungen vom Design in `final.html` (vom Nutzer gewünscht bzw. freigegeben): Die Textauswahl (`::selection`) ist anthrazit statt weiß auf Gold (WCAG AA, 8,09:1); Fokus-Umrisse bei Tastaturbedienung in Gold-700; statt der seitenweiten Partikel ein Knotennetz mit Blueprint-Raster nur im Hero (pausiert außerhalb des Sichtbereichs, statisch bei reduzierter Bewegung); goldener Stern statt „//“ vor den Sektionstiteln; CTA „Beratung anfragen“; Hero-Zweitbutton führt zu „Leistungen“; kompaktere Sektionsabstände auf Mobil.
+- Bewusste Abweichungen vom ursprünglichen KI-Design (vom Nutzer gewünscht bzw. freigegeben): Die Textauswahl (`::selection`) ist anthrazit statt weiß auf Gold (WCAG AA, 8,09:1); Fokus-Umrisse bei Tastaturbedienung in Gold-700; statt der seitenweiten Partikel ein Knotennetz mit Blueprint-Raster nur im Hero (pausiert außerhalb des Sichtbereichs, statisch bei reduzierter Bewegung); Sektionstitel ohne „//“-Präfix; CTA „Beratung anfragen“; Hero-Zweitbutton führt zu „Leistungen“; kompaktere Sektionsabstände auf Mobil.
 - Nur `dist/` deployen (siehe Deploy). Entwicklungspfade (`tools/`, `src/`, `.planning/`, `preview/`) sperrt `.htaccess` ohnehin.
 - Offene Live-Prüfungen (PHP-Mailversand, Apache-Regeln, Header, heizreport-Lizenz, Rechtsprüfung, Hoster-Angaben, PageSpeed Insights) stehen in [LAUNCH-CHECKLIST.md](LAUNCH-CHECKLIST.md).
 
