@@ -19,8 +19,13 @@ check() { # check <name> <command...>
   if "$@"; then pass "$name"; else fail "$name"; fi
 }
 
-# 1. build
+# 1. build (vorher Stand von index.html/main.css merken: aendert der Build sie, waren sie vor verify veraltet)
+pre_build=$(cat index.html assets/css/main.css | cksum)
 check build sh build.sh
+if [ "$(cat index.html assets/css/main.css | cksum)" != "$pre_build" ]; then
+  echo "WARN build-current: build.sh hat index.html/main.css geaendert (vor verify nicht gebaut; Aenderung einchecken)"
+  WARNS=$((WARNS + 1))
+fi
 
 # 2. SEC-02: kein Inline-Code (JSON-LD ist ein Datenblock, kein ausfuehrbares Script)
 sec02() {

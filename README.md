@@ -87,7 +87,7 @@ Lighthouse wird bei Bedarf über `npx lighthouse@13.5.0` geholt (nur Entwicklung
 sh tools/verify.sh
 ```
 
-Das Ergebnis steht in der letzten Zeile: `ALL PASS` (bzw. `ALL PASS (1 WARN)`, wenn nur der Lighthouse-Performance-Median 99 statt 100 beträgt). Mit `VERIFY_LIGHTHOUSE=0` entfällt der mehrminütige Lighthouse-Teil für schnelle Läufe.
+Das Ergebnis steht in der letzten Zeile: `ALL PASS` (bzw. `ALL PASS (1 WARN)`, wenn nur der Lighthouse-Performance-Median 99 statt 100 beträgt). Ein zusätzliches `WARN build-current` heißt: `index.html` oder `main.css` waren vor dem Lauf nicht frisch gebaut; `verify.sh` baut selbst, die Änderung muss danach eingecheckt werden. Mit `VERIFY_LIGHTHOUSE=0` entfällt der mehrminütige Lighthouse-Teil für schnelle Läufe.
 
 Geprüft werden: Build, kein Inline-Code, keine fremden Domains, `final.html` unverändert, keine Platzhalter, statische Regeln (Pfade, `.htaccess`, Header, Versionsstempel, Honeypot, Dialog-/Menü-/Consent-IDs, heizreport nur im Loader), Struktur/SEO (Title, Description, OG/Twitter, JSON-LD, Überschriften, alt-Texte, Linktexte, robots/sitemap), Design-Stile gegen Baseline, Layout 320–1440 px ohne horizontales Scrollen, Netzwerk (keine fremden Anfragen), Bewegung (`prefers-reduced-motion`, Partikel-Pause im verdeckten Tab), Interaktion, Header und CSP (inklusive Negativtest), Cookies und Web-Storage, axe-core (0 Verstöße in allen Zuständen), Zielgrößen nach WCAG 2.5.8, Clipping, Tastatur-Durchgang, Größenbudget, Deploy-Whitelist (`dist`) und Lighthouse.
 
