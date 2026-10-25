@@ -142,7 +142,14 @@ switch ($_SERVER['REQUEST_METHOD']) {
             echo json_encode(['error' => 'Bitte geben Sie eine gültige E-Mail-Adresse an.']);
             exit;
         }
-        if (strlen($phone) > 30 || ($phone !== '' && !preg_match('/^[0-9+()\/\-. ]+$/', $phone))) {
+        // Name: letters plus space, hyphen, apostrophe, dot (e.g. "Dr. Müller-O'Brien"), at least 2 letters
+        if (!preg_match('/^(?=(?:.*\p{L}){2})[\p{L}\p{M} .\'\-]+$/u', $name)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Bitte geben Sie Ihren Namen an (mindestens 2 Buchstaben).']);
+            exit;
+        }
+        // Phone: no letters; digits with optional + ( ) / - and spaces, at least 6 digits
+        if (strlen($phone) > 30 || ($phone !== '' && (!preg_match('/^\+?[0-9()\/\- ]+$/', $phone) || preg_match_all('/[0-9]/', $phone) < 6))) {
             http_response_code(400);
             echo json_encode(['error' => 'Bitte geben Sie eine gültige Telefonnummer an.']);
             exit;
@@ -153,8 +160,9 @@ switch ($_SERVER['REQUEST_METHOD']) {
             exit;
         }
 
-        // Validate email format
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        // Validate email format: PHP's RFC check plus a strict pattern that requires a real TLD
+        $emailPattern = '/^[A-Za-z0-9._%+\-]+@[A-Za-z0-9](?:[A-Za-z0-9\-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9\-]*[A-Za-z0-9])?)*\.[A-Za-z]{2,}$/';
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match($emailPattern, $email)) {
             http_response_code(400);
             echo json_encode(['error' => 'Bitte geben Sie eine gültige E-Mail-Adresse an.']);
             exit;
