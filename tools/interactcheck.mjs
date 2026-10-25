@@ -338,12 +338,12 @@ const groups = {
     await page.goto(origin + '/', { waitUntil: 'load' });
     const tx = (id) => page.evaluate((i) => document.getElementById(i).textContent.replace(/\s+/g, ' '), id);
     const imp = await tx('dlg-impressum');
-    for (const s of ['Stettener Str. 24', '70734 Fellbach', '+49 (0) 172 232 14 82', 'info@ms-bauconsult.de', 'Verbraucherstreitbeilegung', 'Quelle: e-recht24.de', 'Deutsche Energie-Agentur (dena)']) {
+    for (const s of ['Angaben gemäß § 5 DDG', 'Stettener Str. 24', '70734 Fellbach', '+49 (0) 172 232 14 82', 'info@ms-bauconsult.de', 'Verbraucherstreitbeilegung', 'Quelle: e-recht24.de', 'Deutsche Energie-Agentur (dena)']) {
       report(imp.includes(s), `legal impressum contains "${s}"`);
     }
     report(!/Adobe Stock|Shutterstock/.test(imp), 'legal impressum without old image line');
     const ds = await tx('dlg-datenschutz');
-    for (const s of ['Verantwortlicher Anbieter', 'Kontaktformular – technische Verarbeitung', 'Hosting und Server-Logfiles', 'Wärmepumpen-Check (heizreport.de)', 'Schriftarten (lokal)', 'Cookies, Tracking und lokaler Speicher', 'in gehashter Form', 'heiz.report', '§ 25 Abs. 1 TDDDG']) {
+    for (const s of ['Verantwortlicher Anbieter', 'Kontaktformular – technische Verarbeitung', 'Hosting und Server-Logfiles', 'Wärmepumpen-Check (heizreport.de)', 'Schriftarten (lokal)', 'Cookies, Tracking und lokaler Speicher', 'in gehashter Form', 'geheimen, nur auf dem Server hinterlegten Schlüssel', 'etwa 10 Minuten automatisch gelöscht', 'setzt selbst keine Cookies', 'Informationen in Ihrem Browser speichern', 'heiz.report', '§ 25 Abs. 1 TDDDG']) {
       report(ds.includes(s), `legal datenschutz contains "${s}"`);
     }
     const href = await page.evaluate(() => document.querySelector('#dlg-datenschutz a[href^="https://"]')?.getAttribute('href'));

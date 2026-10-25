@@ -8,6 +8,21 @@ ErrorDocument 404 /index.html
     DirectoryIndex index.html
 </IfModule>
 
+# Schutz der Entwicklungsdateien OHNE mod_rewrite (faellt nicht offen, wenn das Modul fehlt
+# oder FollowSymLinks/SymLinksIfOwnerMatch nicht erlaubt ist). Ergebnis wie die Rewrite-Regeln
+# unten: 404 (mit ErrorDocument also index.html). .well-known bleibt erreichbar.
+<IfModule mod_alias.c>
+    RedirectMatch 404 "^/(tools|preview|screenshots|src|\.planning|\.git|\.claude)(/|$)"
+    RedirectMatch 404 "^/(final\.html|build\.(sh|ps1)|tailwind\.config\.js|tailwindcss(\.exe)?|[^/]+\.md)$"
+</IfModule>
+
+# Dotfiles (.git, .env, .htaccess ...) nie ausliefern (nur Dateinamen, .well-known/ bleibt erreichbar)
+<IfModule mod_authz_core.c>
+    <FilesMatch "^\.">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
 

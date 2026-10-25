@@ -57,7 +57,7 @@ Die Interaktionsprüfung läuft auch einzeln, optional mit Gruppen:
 node tools/interactcheck.mjs [gruppe ...]
 ```
 
-Gruppen: `server`, `mock`, `parity`, `paths`, `dialogs`, `deeplinks`, `legal`, `form`, `anchors`, `menu`, `consent`. Der Entwicklungsserver (`tools/serve.mjs`) ersetzt Apache und bildet die Rewrites sowie `sendMail.php` nach (Mail-Mock: `startServer(root, { mockMail: true })`, die Serverregeln der Formularprüfung sind mit `sendMail.php` und `main.js` auf Übereinstimmung getestet). Mit `--online` lädt die Gruppe `consent` einmal das echte heizreport-Skript und meldet das Ergebnis nur als `INFO`; `verify.sh` verwendet das Flag nie.
+Gruppen: `server`, `mock`, `parity`, `paths`, `dialogs`, `deeplinks`, `legal`, `form`, `anchors`, `menu`, `consent`. Der Entwicklungsserver (`tools/serve.mjs`) ersetzt Apache und bildet die Rewrites sowie `sendMail.php` nach (Mail-Mock: `startServer(root, { mockMail: true })`, die Regex-Quellen und Grenzwerte der Formularprüfung sind textuell mit `sendMail.php` und `main.js` abgeglichen, der Mock bildet die Reihenfolge der PHP-Prüfungen nach; PHP selbst (z. B. `filter_var`, `mail()`) wird dabei nicht ausgeführt und muss separat getestet werden). Mit `--online` lädt die Gruppe `consent` einmal das echte heizreport-Skript und meldet das Ergebnis nur als `INFO`; `verify.sh` verwendet das Flag nie.
 
 Die Baseline der berechneten Stile liegt in `.planning/phases/02-inhalte-neue-sektionen/baseline/styles.json` und wurde von der Phase-1-Seite aufgenommen. `node tools/stylecheck.mjs index.html --record` darf auf der geänderten Seite **nicht** erneut ausgeführt werden.
 
