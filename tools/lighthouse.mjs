@@ -1,4 +1,4 @@
-// Usage: node tools/lighthouse.mjs [--runs N] [--batch K]
+// Usage: node tools/lighthouse.mjs [--runs N]
 // Dev-only acceptance: Lighthouse 13.5.0 (pinned, via npx, never a project dependency), mobile, median of N (default 5)
 // runs against serve.mjs --prod (headers from .htaccess). Output: tools/out/lighthouse/ (gitignored).
 // Exit: 0 = all four medians 100 (PASS); 3 = A11y/BP/SEO 100 and Performance 99 (WARN); 1 = FAIL.
@@ -16,11 +16,9 @@ const arg = (name, def) => {
 const runs = arg('--runs', 5);
 
 fs.mkdirSync(outRoot, { recursive: true });
-let batch = arg('--batch', 0);
-if (!batch) {
-  batch = 1;
-  while (fs.existsSync(path.join(outRoot, `batch-${batch}`))) batch += 1;
-}
+// Every run gets a new batch directory (existing batches are never reused or overwritten)
+let batch = 1;
+while (fs.existsSync(path.join(outRoot, `batch-${batch}`))) batch += 1;
 const dir = path.join(outRoot, `batch-${batch}`);
 fs.mkdirSync(dir, { recursive: true });
 
@@ -33,12 +31,19 @@ const median = (xs) => {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 };
 
+// npx without a shell: npx.cmd cannot be spawned with shell:false on Windows (Node >= 18.20), so run
+// npm's npx-cli.js with the current node binary; elsewhere fall back to the npx executable.
+const nodeDir = path.dirname(process.execPath);
+const npxCli = [path.join(nodeDir, 'node_modules', 'npm', 'bin', 'npx-cli.js'),
+  path.join(nodeDir, '..', 'lib', 'node_modules', 'npm', 'bin', 'npx-cli.js')].find((f) => fs.existsSync(f));
+
 function runOnce(url, file) {
   return new Promise((resolve, reject) => {
     const args = ['--yes', 'lighthouse@13.5.0', url, '--form-factor=mobile',
       '--only-categories=performance,accessibility,best-practices,seo', '--quiet',
-      '--chrome-flags="--headless=new"', '--output=json', `--output-path="${file}"`];
-    const p = spawn('npx', args, { shell: true, stdio: ['ignore', 'inherit', 'inherit'], cwd: root });
+      '--chrome-flags=--headless=new', '--output=json', `--output-path=${file}`];
+    const [cmd, argv] = npxCli ? [process.execPath, [npxCli, ...args]] : ['npx', args];
+    const p = spawn(cmd, argv, { shell: false, stdio: ['ignore', 'inherit', 'inherit'], cwd: root });
     p.on('error', reject);
     p.on('exit', (code) => (code === 0 ? resolve() : reject(new Error(`lighthouse exit ${code}`))));
   });
@@ -71,9 +76,8 @@ try {
       bytes: Math.round(a['total-byte-weight'].numericValue),
       requests: a['network-requests'].details.items.length,
     };
-    r.noise = r.tbtMs > 500;
     results.push(r);
-    console.log(`run ${i}: P=${r.performance} A=${r.accessibility} BP=${r.bestPractices} SEO=${r.seo} FCP=${r.fcpMs} LCP=${r.lcpMs} TBT=${r.tbtMs} CLS=${r.cls} SI=${r.speedIndexMs} bytes=${r.bytes} req=${r.requests}${r.noise ? ' (noise: TBT > 500 ms)' : ''}`);
+    console.log(`run ${i}: P=${r.performance} A=${r.accessibility} BP=${r.bestPractices} SEO=${r.seo} FCP=${r.fcpMs} LCP=${r.lcpMs} TBT=${r.tbtMs} CLS=${r.cls} SI=${r.speedIndexMs} bytes=${r.bytes} req=${r.requests}`);
   }
 } finally {
   await server.close();
