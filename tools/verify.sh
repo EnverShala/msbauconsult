@@ -1,9 +1,11 @@
 #!/bin/sh
-# Ein-Befehl-Abnahme fuer Phase 3 (vom Projektstamm ausfuehren: sh tools/verify.sh)
+# Ein-Befehl-Phase-4-Gesamtabnahme (vom Projektstamm ausfuehren: sh tools/verify.sh)
 set -u
 cd "$(dirname "$0")/.."
 
 FAILS=0
+SKIPPED=0
+WARNS=0
 REVIEW=.planning/phases/03-interaktion/review
 
 pass() { echo "PASS $1"; }
@@ -35,6 +37,20 @@ external() {
   [ -z "$urls" ] || { echo "  fremde URLs: $urls"; return 1; }
 }
 check static-external external
+
+# 3b. Phase 4 statisch: Header, Kompression, Caching in .htaccess
+headers_static() {
+  rc=0
+  [ "$(grep -c '^ *Header always set Content-Security-Policy' .htaccess)" -eq 1 ] || { echo "  .htaccess: CSP-Zeile nicht genau einmal"; rc=1; }
+  for s in "default-src 'none'" "frame-src 'none'" "frame-ancestors 'none'"     'Strict-Transport-Security "max-age=31536000; includeSubDomains"' 'X-Content-Type-Options "nosniff"'     'X-Frame-Options "DENY"' 'Referrer-Policy "strict-origin-when-cross-origin"' 'Permissions-Policy'     'Cross-Origin-Opener-Policy "same-origin"' immutable BROTLI_COMPRESS DEFLATE; do
+    grep -qF -- "$s" .htaccess || { echo "  .htaccess: fehlt: $s"; rc=1; }
+  done
+  [ "$(grep -c 'Header onsuccess unset' .htaccess)" -eq 3 ] || { echo "  .htaccess: Header onsuccess unset != 3"; rc=1; }
+  bad=$(grep -v '^ *#' .htaccess | grep -E 'data:|unsafe-eval|preload|interest-cohort|Cross-Origin-Embedder-Policy|Cross-Origin-Resource-Policy' || true)
+  [ -z "$bad" ] || { echo "  .htaccess: verbotene Direktive: $bad"; rc=1; }
+  return $rc
+}
+check static-headers headers_static
 
 # 4. final.html unveraendert
 FINAL_SHA=df448ef592d70447b5b68ca11fa38c79ee1547d8ba263dbc55753ae06116fc1f
@@ -77,6 +93,32 @@ phase3static() {
 }
 check static-phase3 phase3static
 
+# 5c. ?v=-Stempel passen zu den gebauten Dateien; index.html ohne BOM und ohne CR
+version_static() {
+  rc=0
+  c=$(hash_of_file assets/css/main.css | cut -c1-8); j=$(hash_of_file assets/js/main.js | cut -c1-8)
+  grep -q "/assets/css/main.css?v=$c\"" index.html || { echo "  index.html: CSS-Stempel passt nicht ($c)"; rc=1; }
+  grep -q "/assets/js/main.js?v=$j\"" index.html || { echo "  index.html: JS-Stempel passt nicht ($j)"; rc=1; }
+  [ "$(head -c3 index.html | od -An -tx1 | tr -d ' ')" != "efbbbf" ] || { echo "  index.html: BOM"; rc=1; }
+  ! grep -q "$(printf '\r')" index.html || { echo "  index.html: CR vorhanden"; rc=1; }
+  return $rc
+}
+hash_of_file() { if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | cut -d' ' -f1; else shasum -a 256 "$1" | cut -d' ' -f1; fi; }
+check static-version version_static
+
+# 5d. build.ps1 stempelt byte-identisch zu build.sh (PSModulePath leeren: Git-Bash erbt sonst den PowerShell-7-Pfad)
+ps1_parity() {
+  mkdir -p tools/out
+  cp index.html tools/out/index.sh.html
+  env -u PSModulePath powershell -NoProfile -ExecutionPolicy Bypass -File build.ps1 >/dev/null 2>&1 || return 1
+  cmp -s index.html tools/out/index.sh.html
+}
+if command -v powershell.exe >/dev/null 2>&1 || command -v powershell >/dev/null 2>&1; then
+  check build-ps1-parity ps1_parity
+else
+  echo "SKIP build-ps1-parity"; SKIPPED=$((SKIPPED + 1))
+fi
+
 # 6. Struktur
 check structure node tools/structcheck.mjs index.html
 
@@ -91,6 +133,7 @@ check layout node tools/layoutcheck.mjs index.html "$REVIEW/portrait"
 check network node tools/netcheck.mjs index.html
 check motion node tools/motioncheck.mjs index.html
 check interact node tools/interactcheck.mjs
+check headers node tools/hardencheck.mjs headers
 
 # 10. Capture (Review-Material, kein Pixelvergleich)
 rm -rf "$REVIEW/full"; mkdir -p "$REVIEW/full"
@@ -102,4 +145,9 @@ for f in index.html assets/css/main.css assets/js/main.js assets/fonts/*.woff2 a
   [ -f "$f" ] && echo "$f $(wc -c < "$f" | tr -d ' ') $(gzip -9 -c "$f" | wc -c | tr -d ' ')"
 done
 
-if [ "$FAILS" -eq 0 ]; then echo "ALL PASS"; exit 0; else echo "$FAILS FAILED"; exit 1; fi
+if [ "$FAILS" -ne 0 ]; then echo "$FAILS FAILED"; exit 1; fi
+note=""
+[ "$WARNS" -eq 0 ] || note="$WARNS WARN"
+[ "$SKIPPED" -eq 0 ] || note="${note:+$note, }$SKIPPED SKIPPED"
+if [ -z "$note" ]; then echo "ALL PASS"; else echo "ALL PASS ($note)"; fi
+exit 0

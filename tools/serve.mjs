@@ -2,6 +2,8 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import zlib from 'node:zlib';
+import { pathToFileURL } from 'node:url';
 
 const TYPES = {
   html: 'text/html; charset=utf-8',
@@ -84,10 +86,31 @@ function mailDecision(state, contentType, raw) {
   return [200, { success: true }];
 }
 
-export function startServer(rootDir, { mockMail = false } = {}) {
+// Single source of truth for the production mode: the "Header always set" lines of .htaccess.
+export function htaccessHeaders(root) {
+  const text = fs.readFileSync(path.join(path.resolve(root), '.htaccess'), 'utf8');
+  const headers = {};
+  for (const m of text.matchAll(/^\s*Header\s+always\s+set\s+([A-Za-z-]+)\s+"([^"]*)"\s*$/gm)) headers[m[1]] = m[2];
+  return headers;
+}
+
+// Cache-Control matrix: mirrors the FilesMatch rules in .htaccess (hardencheck verifies both).
+function cacheControl(file) {
+  const base = path.basename(file);
+  if (base === 'favicon.svg') return 'public, max-age=604800';
+  if (/\.(css|js|woff2|avif|webp|jpe?g|png)$/.test(base)) return 'public, max-age=31536000, immutable';
+  return 'no-cache';
+}
+
+const COMPRESSIBLE = new Set(['html', 'css', 'js', 'mjs', 'svg', 'json', 'xml', 'txt']);
+
+export function startServer(rootDir, { mockMail = false, prod = false, port = 0 } = {}) {
   const root = path.resolve(rootDir);
   const state = { count: 0, mails: [] };
+  const secHeaders = prod ? htaccessHeaders(root) : {};
   const server = http.createServer((req, res) => {
+    // Prod: every response (also 4xx) carries the .htaccess headers, like "Header always set"
+    for (const [k, v] of Object.entries(secHeaders)) res.setHeader(k, v);
     let pathname;
     try {
       pathname = decodeURIComponent(req.url.split('?')[0].split('#')[0]);
@@ -108,6 +131,7 @@ export function startServer(rootDir, { mockMail = false } = {}) {
       req.on('data', (c) => { size += c.length; if (size <= 65536) chunks.push(c); });
       req.on('end', () => {
         const [status, body] = mailDecision(state, req.headers['content-type'], Buffer.concat(chunks).toString('utf8'));
+        if (prod) res.setHeader('Cache-Control', 'no-cache');
         res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify(body));
       });
@@ -120,17 +144,39 @@ export function startServer(rootDir, { mockMail = false } = {}) {
     }
     fs.stat(file, (err, st) => {
       if (err || !st.isFile()) {
-        res.writeHead(404).end('Not found');
+        res.writeHead(404, prod ? { 'Cache-Control': 'no-cache' } : {}).end('Not found');
         return;
       }
       const ext = path.extname(file).slice(1).toLowerCase();
-      res.writeHead(200, { 'Content-Type': TYPES[ext] || 'application/octet-stream' });
-      fs.createReadStream(file).pipe(res);
+      const type = TYPES[ext] || 'application/octet-stream';
+      if (!prod) {
+        res.writeHead(200, { 'Content-Type': type });
+        fs.createReadStream(file).pipe(res);
+        return;
+      }
+      fs.readFile(file, (rerr, buf) => {
+        if (rerr) { res.writeHead(404).end('Not found'); return; }
+        const headers = { 'Content-Type': type, 'Cache-Control': cacheControl(file) };
+        if (COMPRESSIBLE.has(ext)) {
+          const ae = String(req.headers['accept-encoding'] || '');
+          headers.Vary = 'Accept-Encoding';
+          if (ae.split(',').some((x) => x.trim().split(';')[0] === 'br')) {
+            buf = zlib.brotliCompressSync(buf, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 5 } });
+            headers['Content-Encoding'] = 'br';
+          } else if (ae.split(',').some((x) => x.trim().split(';')[0] === 'gzip')) {
+            buf = zlib.gzipSync(buf, { level: 6 });
+            headers['Content-Encoding'] = 'gzip';
+          }
+        }
+        headers['Content-Length'] = buf.length;
+        res.writeHead(200, headers);
+        res.end(buf);
+      });
     });
   });
   return new Promise((resolve, reject) => {
     server.once('error', reject);
-    server.listen(0, '127.0.0.1', () => {
+    server.listen(port, '127.0.0.1', () => {
       resolve({
         port: server.address().port,
         mails: state.mails,
@@ -139,4 +185,17 @@ export function startServer(rootDir, { mockMail = false } = {}) {
       });
     });
   });
+}
+
+// CLI: node tools/serve.mjs [--prod] [--mock-mail] [--port N]
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const args = process.argv.slice(2);
+  const pi = args.indexOf('--port');
+  const prod = args.includes('--prod');
+  const srv = await startServer(path.resolve(import.meta.dirname, '..'), {
+    prod,
+    mockMail: args.includes('--mock-mail'),
+    port: pi >= 0 ? Number(args[pi + 1]) : 8080,
+  });
+  console.log(`serving http://127.0.0.1:${srv.port}/ (${prod ? 'prod' : 'dev'})`);
 }
