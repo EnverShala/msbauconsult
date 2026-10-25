@@ -762,4 +762,6 @@ try {
   await browser?.close();
   await server.close();
 }
-process.exit(fails === 0 ? 0 : 1);
+// Let pending sockets (fetch keep-alive) drain before exiting; an immediate exit trips a libuv assertion on Windows.
+process.exitCode = fails === 0 ? 0 : 1;
+setTimeout(() => process.exit(), 200);

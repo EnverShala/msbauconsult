@@ -174,6 +174,39 @@ for f in index.html assets/css/main.css assets/js/main.js assets/fonts/*.woff2 a
   [ -f "$f" ] && echo "$f $(wc -c < "$f" | tr -d ' ') $(gzip -9 -c "$f" | wc -c | tr -d ' ')"
 done
 
+# 11b. Deploy-Whitelist (dist.sh): genau die Upload-Dateien, nichts Anderes
+EXPECTED_DIST=".htaccess
+assets/css/main.css
+assets/fonts/OFL-Cinzel.txt
+assets/fonts/OFL-PlusJakartaSans.txt
+assets/fonts/cinzel.woff2
+assets/fonts/pjs-italic.woff2
+assets/fonts/pjs.woff2
+assets/img/eee.png
+assets/img/og.jpg
+assets/img/portrait-1132.avif
+assets/img/portrait-1132.webp
+assets/img/portrait-480.avif
+assets/img/portrait-480.webp
+assets/img/portrait-800.avif
+assets/img/portrait-800.jpg
+assets/img/portrait-800.webp
+assets/js/main.js
+favicon.svg
+index.html
+robots.txt
+sendMail.php
+sitemap.xml"
+distcheck() {
+  sh tools/dist.sh >/dev/null || return 1
+  got=$(cd dist && find . -type f | sed 's#^\./##' | LC_ALL=C sort)
+  want=$(printf '%s
+' "$EXPECTED_DIST" | LC_ALL=C sort)
+  [ "$got" = "$want" ] || { echo "  dist weicht von der Whitelist ab"; return 1; }
+  [ -z "$(find dist -name '*.md' -o -name 'final.html' -o -path '*/tools/*' -o -path '*/src/*')" ]
+}
+check dist distcheck
+
 # 12. Lighthouse (Median aus 5 Laeufen; Exit 3 = Performance 99 = WARN)
 if [ "${VERIFY_LIGHTHOUSE:-1}" = "0" ]; then
   echo "SKIP lighthouse"; SKIPPED=$((SKIPPED + 1))

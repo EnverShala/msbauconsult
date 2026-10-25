@@ -1,0 +1,62 @@
+#!/bin/sh
+# Deploy-Hilfe: kopiert genau die Upload-Whitelist nach dist/ (gitignored). Aufruf: sh tools/dist.sh
+set -eu
+cd "$(dirname "$0")/.."
+
+hash_of() {
+  if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | cut -d' ' -f1
+  else shasum -a 256 "$1" | cut -d' ' -f1; fi
+}
+
+# Stempel pruefen: ?v= in index.html muss zu sha256[0:8] der aktuellen Datei passen
+for f in assets/css/main.css assets/js/main.js; do
+  stamp=$(grep -oE "/$f\?v=[0-9a-f]{8}" index.html | head -n 1 | sed 's/.*?v=//' || true)
+  want=$(hash_of "$f" | cut -c1-8)
+  if [ -z "$stamp" ] || [ "$stamp" != "$want" ]; then
+    echo "Stempel veraltet - erst sh build.sh ausfuehren ($f: index.html=${stamp:-fehlt}, Datei=$want)" >&2
+    exit 1
+  fi
+done
+
+FILES=".htaccess index.html favicon.svg robots.txt sitemap.xml sendMail.php
+assets/css/main.css
+assets/js/main.js
+assets/fonts/cinzel.woff2
+assets/fonts/pjs.woff2
+assets/fonts/pjs-italic.woff2
+assets/fonts/OFL-Cinzel.txt
+assets/fonts/OFL-PlusJakartaSans.txt
+assets/img/og.jpg
+assets/img/eee.png
+assets/img/portrait-480.avif
+assets/img/portrait-480.webp
+assets/img/portrait-800.avif
+assets/img/portrait-800.webp
+assets/img/portrait-800.jpg
+assets/img/portrait-1132.avif
+assets/img/portrait-1132.webp"
+
+# Hero-Bilder nur, wenn ausserhalb von HTML-Kommentaren referenziert
+if awk 'BEGIN{c=0} { s=$0; out="";
+    while (length(s) > 0) {
+      if (c) { i=index(s,"-->"); if (i==0) { s=""; } else { s=substr(s,i+3); c=0 } }
+      else { i=index(s,"<!--"); if (i==0) { out=out s; s="" } else { out=out substr(s,1,i-1); s=substr(s,i+4); c=1 } }
+    }
+    print out }' index.html | grep -q '/assets/img/hero/'; then
+  for f in assets/img/hero/*; do FILES="$FILES
+$f"; done
+fi
+
+for f in $FILES; do
+  [ -f "$f" ] || { echo "Fehlt: $f" >&2; exit 1; }
+done
+
+rm -rf dist
+mkdir -p dist
+for f in $FILES; do
+  mkdir -p "dist/$(dirname "$f")"
+  cp "$f" "dist/$f"
+done
+
+( cd dist && find . -type f | sort | sed 's#^\./##' )
+echo "dist/: $(find dist -type f | wc -l | tr -d ' ') Dateien, $(find dist -type f -exec cat {} + | wc -c | tr -d ' ') Bytes"
