@@ -1,6 +1,8 @@
 #!/bin/sh
 # Deploy-Hilfe: baut zuerst (CSS + ?v=-Stempel), kopiert dann genau die Upload-Whitelist nach dist/
 # (gitignored). Aufruf: sh tools/dist.sh
+# Testversion fuer eine andere (Sub-)Domain: STAGING_HOST=test.example.de sh tools/dist.sh
+# -> dist-staging/ mit Weiterleitung auf diese Domain, ohne HSTS, mit noindex.
 set -eu
 cd "$(dirname "$0")/.."
 
@@ -40,12 +42,32 @@ for f in $FILES; do
   [ -f "$f" ] || { echo "Fehlt: $f" >&2; exit 1; }
 done
 
-rm -rf dist
-mkdir -p dist
+OUT=dist
+STAGING_HOST=${STAGING_HOST:-}
+if [ -n "$STAGING_HOST" ]; then
+  echo "$STAGING_HOST" | grep -qE '^[A-Za-z0-9.-]+$' || { echo "Ungueltiger STAGING_HOST" >&2; exit 1; }
+  OUT=dist-staging
+fi
+
+rm -rf "$OUT"
+mkdir -p "$OUT"
 for f in $FILES; do
-  mkdir -p "dist/$(dirname "$f")"
-  cp "$f" "dist/$f"
+  mkdir -p "$OUT/$(dirname "$f")"
+  cp "$f" "$OUT/$f"
 done
 
-( cd dist && find . -type f | sort | sed 's#^\./##' )
-echo "dist/: $(find dist -type f | wc -l | tr -d ' ') Dateien, $(find dist -type f -exec cat {} + | wc -c | tr -d ' ') Bytes"
+if [ -n "$STAGING_HOST" ]; then
+  # Zeilenweise ersetzen (ENVIRON statt -v, damit awk die Backslashes nicht umdeutet)
+  STAGING_ESC=$(echo "$STAGING_HOST" | sed 's/\./\\./g') STAGING_HOST="$STAGING_HOST" awk '
+    index($0, "RewriteCond %{HTTP_HOST}") { print "    RewriteCond %{HTTP_HOST} !^" ENVIRON["STAGING_ESC"] "$ [NC]"; next }
+    index($0, "RewriteRule ^ https://www.ms-bauconsult.de") { print "    RewriteRule ^ https://" ENVIRON["STAGING_HOST"] "%{REQUEST_URI} [R=301,L]"; next }
+    index($0, "Strict-Transport-Security") { next }
+    index($0, "Header always set X-Content-Type-Options") { print "    Header always set X-Robots-Tag \"noindex, nofollow\"" }
+    { print }
+  ' "$OUT/.htaccess" > "$OUT/.htaccess.tmp"
+  mv "$OUT/.htaccess.tmp" "$OUT/.htaccess"
+  printf 'User-agent: *\nDisallow: /\n' > "$OUT/robots.txt"
+fi
+
+( cd "$OUT" && find . -type f | sort | sed 's#^\./##' )
+echo "$OUT/: $(find "$OUT" -type f | wc -l | tr -d ' ') Dateien, $(find "$OUT" -type f -exec cat {} + | wc -c | tr -d ' ') Bytes"

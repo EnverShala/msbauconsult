@@ -24,6 +24,8 @@ sh tools/dist.sh
 
 `tools/dist.sh` führt zuerst `sh build.sh` aus (damit `main.css` und die `?v=`-Stempel immer zum aktuellen Stand von `index.html` und `src/input.css` passen), prüft danach die Stempel und kopiert genau die Upload-Whitelist aus `tools/dist-files.txt` nach `dist/` (per `.gitignore` ausgeschlossen). Der Inhalt von `dist/` wird per FTP in das Web-Root des Hosters geladen. Bei einer inhaltlichen Änderung von `index.html` vor dem Deploy `<lastmod>` in `sitemap.xml` von Hand auf das Änderungsdatum setzen (wird nicht automatisch gepflegt). Nicht deployt werden `final.html`, `src/`, `tools/`, `preview/`, `.planning/`, `*.md` und die Build-Dateien.
 
+Testversion auf einer anderen (Sub-)Domain, z. B. `msbauconsult.enver-shala.de`: `STAGING_HOST=msbauconsult.enver-shala.de sh tools/dist.sh` erzeugt `dist-staging/` mit Weiterleitung auf diese Domain, ohne HSTS, mit `X-Robots-Tag: noindex` und sperrender `robots.txt`. Die Seite muss im Hauptverzeichnis der (Sub-)Domain liegen, nicht in einem Unterordner (Pfade beginnen mit `/`). Achtung: Das Kontaktformular sendet auch dort echte Mails an `info@ms-bauconsult.de`.
+
 Setzt der Hoster serverseitig eine eigene Content-Security-Policy, gelten beide Header als Schnittmenge. Es darf nur die CSP aus `.htaccess` aktiv sein; die Prüfung steht in [LAUNCH-CHECKLIST.md](LAUNCH-CHECKLIST.md).
 
 ## Sicherheit
