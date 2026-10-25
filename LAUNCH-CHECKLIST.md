@@ -17,7 +17,7 @@ Offene Prüfungen vor dem Go-live. Alles hier ist lokal nicht prüfbar (kein PHP
 
 ## Kontaktformular
 
-- [ ] `php -l sendMail.php` ohne Fehler (PHP war lokal nicht verfügbar, die Datei wurde nie ausgeführt: unbedingt auch einen echten Test per Formular durchführen)
+- [ ] `php -l sendMail.php` auf dem Hoster ohne Fehler (lokal am 2026-10-25 mit portablem PHP 8.3.36 geprüft: Syntax ok; Validierung, Honeypot, Zeitfalle, Content-Type-Prüfung, 405 und Rate-Limit (429 ab der 4. Anfrage) funktional getestet. Nicht getestet: echter Mailversand, PHP 7.4) – unbedingt einen echten Test per Formular durchführen
 - [ ] Ratenbegrenzung: im Temp-Verzeichnis (`sys_get_temp_dir()`) entsteht `rl_salt.key` (Rechte 0600) und je Absender eine `rl_<64 Hex-Zeichen>.json`; nach über 10 Minuten und einer weiteren Formularanfrage ist die alte `rl_*.json` verschwunden; `mb_encode_mimeheader` verfügbar (sonst Fallback auf Base64-Betreff)
 - [ ] Entwicklungsdateien sind auch ohne mod_rewrite gesperrt: `curl -I https://www.ms-bauconsult.de/.git/config`, `/.planning/`, `/tools/serve.mjs`, `/README.md` liefern 404 oder 403; `/.well-known/` bleibt erreichbar
 - [ ] PHP-Version mindestens 7.4 (Arrow Functions), `mbstring` verfügbar

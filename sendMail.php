@@ -1,5 +1,8 @@
 <?php
 
+// PHP warnings (e.g. from mail()) must never leak into the JSON response
+ini_set('display_errors', '0');
+
 // --- Config ---
 $behindProxy = false; // set true if behind Cloudflare or a trusted Nginx reverse proxy
 
