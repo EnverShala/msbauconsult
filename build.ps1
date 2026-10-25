@@ -37,3 +37,14 @@ $argsList = @('-i', 'src/input.css', '-o', 'assets/css/main.css', '--minify')
 if ($Watch) { $argsList += '--watch' }
 & $Bin @argsList
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+# Cache-Busting: ?v=<sha256[0:8]> von main.css/main.js in index.html eintragen (idempotent, UTF-8 ohne BOM)
+if (-not $Watch) {
+    $cssV = (Get-FileHash -Algorithm SHA256 (Join-Path $PSScriptRoot 'assets/css/main.css')).Hash.Substring(0, 8).ToLower()
+    $jsV = (Get-FileHash -Algorithm SHA256 (Join-Path $PSScriptRoot 'assets/js/main.js')).Hash.Substring(0, 8).ToLower()
+    $idx = Join-Path $PSScriptRoot 'index.html'
+    $html = [IO.File]::ReadAllText($idx)
+    $html = [regex]::Replace($html, '/assets/css/main\.css(\?v=[0-9a-f]{8})?"', "/assets/css/main.css?v=$cssV`"")
+    $html = [regex]::Replace($html, '/assets/js/main\.js(\?v=[0-9a-f]{8})?"', "/assets/js/main.js?v=$jsV`"")
+    [IO.File]::WriteAllText($idx, $html, (New-Object Text.UTF8Encoding $false))
+}
