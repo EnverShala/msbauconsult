@@ -1,10 +1,11 @@
 // Usage: node tools/hardencheck.mjs [group ...]  -> exit 0 iff no FAIL
 // Phase-4 runtime checks against the production-mode dev server (serve.mjs --prod, headers from .htaccess).
-// Groups: headers (later plans add more). No group given = all groups.
+// Groups: headers, csp, storage (later plans add more). No group given = all groups.
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import zlib from 'node:zlib';
+import { chromium } from './node_modules/playwright/index.mjs';
 import { startServer, htaccessHeaders } from './serve.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
@@ -119,6 +120,134 @@ const groups = {
       await dev.close();
     }
   },
+};
+
+// Stub for the (consent-gated) heizreport widget: exercises every CSP relaxation the real widget needs
+const WIDGET_STUB = `document.addEventListener('DOMContentLoaded', () => {
+  const st = document.createElement('style'); st.textContent = '.x{color:#1A1C23}'; document.head.appendChild(st);
+  document.getElementById('wp_check_script').innerHTML = '<p style="color:#1A1C23">stub-ok</p><img src="https://heiz.report/assets/images/x.jpg" alt="">';
+  fetch('https://heizreport.de/web/track.php?x=1').catch(() => {});
+  fetch('https://heizreport.de/web/wpCheckIntegration.php', { method: 'POST', body: '{}' }).catch(() => {});
+});`;
+const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
+
+async function stubbedContext(browser, viewport) {
+  const ctx = await browser.newContext({ viewport });
+  ctx.violations = [];
+  // Collected in Node so that violations survive page navigations
+  await ctx.exposeFunction('__viol', (x) => ctx.violations.push(x));
+  await ctx.addInitScript(() => {
+    document.addEventListener('securitypolicyviolation', (e) => window.__viol(e.violatedDirective + ' ' + e.blockedURI));
+  });
+  await ctx.route(/heizreport\.de\/js\/heizreport_3\.js/, (r) => r.fulfill({ status: 200, contentType: 'text/javascript', body: WIDGET_STUB }));
+  await ctx.route(/heizreport\.de\/web\/|heiz\.report\//, (r) => (/heiz\.report/.test(r.request().url())
+    ? r.fulfill({ status: 200, contentType: 'image/png', body: PNG })
+    : r.fulfill({ status: 200, contentType: 'application/json', body: '{}' })));
+  return ctx;
+}
+
+// Full user flow; callers inspect window.__v afterwards
+async function userFlow(page, origin, narrow) {
+  await page.goto(origin + '/', { waitUntil: 'load' });
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await page.waitForTimeout(400);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  if (narrow) {
+    await page.click('#menu-toggle');
+    await page.waitForTimeout(300);
+    await page.click('#menu-toggle');
+    await page.waitForTimeout(300);
+  }
+  for (const name of ['impressum', 'datenschutz']) {
+    const link = page.locator('footer a[data-dialog="' + name + '"]');
+    await link.scrollIntoViewIfNeeded();
+    await link.click();
+    await page.waitForFunction((n) => document.getElementById('dlg-' + n).open, name);
+    await page.keyboard.press('Escape');
+    await page.waitForFunction((n) => !document.getElementById('dlg-' + n).open, name);
+  }
+  await page.goto(origin + '/impressum', { waitUntil: 'load' });
+  await page.waitForFunction(() => document.getElementById('dlg-impressum').open);
+  await page.keyboard.press('Escape');
+  await page.goto(origin + '/', { waitUntil: 'load' });
+  for (const [k, v] of [['name', 'Jo Test'], ['email', 'jo@example.de'], ['phone', ''], ['message', 'Hallo, bitte um Rueckruf.']]) await page.fill('#f-' + k, v);
+  await page.click('#contact-form button[type="submit"]');
+  await page.waitForSelector('#form-status[data-state="success"]', { timeout: 15000 });
+  await page.locator('#wp-load').scrollIntoViewIfNeeded();
+  await page.click('#wp-load');
+  await page.waitForFunction(() => document.getElementById('wp_check_script')?.textContent.includes('stub-ok'), null, { timeout: 8000 });
+  await page.waitForTimeout(600);
+}
+
+groups.csp = async function csp() {
+  const server = await startServer(root, { prod: true, mockMail: true });
+  const origin = `http://127.0.0.1:${server.port}`;
+  const browser = await chromium.launch({ channel: 'chrome' });
+  try {
+    for (const [w, h] of [[1440, 900], [375, 800]]) {
+      const ctx = await stubbedContext(browser, { width: w, height: h });
+      const page = await ctx.newPage();
+      const errors = [];
+      page.on('pageerror', (e) => errors.push('pageerror ' + e.message));
+      page.on('console', (m) => { if (m.type() === 'error' && /Content Security Policy|violat/i.test(m.text())) errors.push(m.text()); });
+      let flowErr = null;
+      try { await userFlow(page, origin, w < 600); } catch (e) { flowErr = e.message.split('\n')[0]; }
+      report(!flowErr, `csp@${w}: full user flow completes (load, scroll, menu, dialogs, /impressum, form, widget)`, flowErr || '');
+      const v = ctx.violations.slice();
+      report(v.length === 0, `csp@${w}: 0 securitypolicyviolation events`, v.join(' | '));
+      report(errors.length === 0, `csp@${w}: no CSP console errors / page errors`, errors.join(' | '));
+      if (w === 1440) {
+        ctx.violations.length = 0;
+        await page.evaluate(() => fetch('https://example.com/').catch(() => {}));
+        await page.evaluate(() => { const s = document.createElement('script'); s.textContent = 'window.__inl=1'; document.body.appendChild(s); });
+        await page.waitForTimeout(300);
+        const nv = { v: ctx.violations.slice(), inl: await page.evaluate(() => window.__inl) };
+        report(nv.v.some((x) => x.startsWith('connect-src')), 'csp: foreign fetch produces a connect-src violation', nv.v.join(' | '));
+        report(nv.v.some((x) => x.startsWith('script-src')) && nv.inl === undefined, 'csp: inline script produces a script-src violation and does not run', nv.v.join(' | '));
+      }
+      await ctx.close();
+    }
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+};
+
+groups.storage = async function storage() {
+  const server = await startServer(root, { prod: true, mockMail: true });
+  const origin = `http://127.0.0.1:${server.port}`;
+  const browser = await chromium.launch({ channel: 'chrome' });
+  try {
+    const ctx = await stubbedContext(browser, { width: 1440, height: 900 });
+    const page = await ctx.newPage();
+    const setCookie = [];
+    page.on('response', (r) => { if (r.url().startsWith(origin) && r.headers()['set-cookie']) setCookie.push(r.url()); });
+    const snapshot = async (label) => {
+      const s = await page.evaluate(async () => ({
+        cookie: document.cookie,
+        ls: localStorage.length,
+        ss: sessionStorage.length,
+        idb: (await indexedDB.databases()).length,
+        caches: (await caches.keys()).length,
+        sw: (await navigator.serviceWorker.getRegistrations()).length,
+      }));
+      const jar = (await ctx.cookies()).length;
+      report(s.cookie === '' && jar === 0, `storage ${label}: no cookies`, JSON.stringify({ doc: s.cookie, jar }));
+      report(s.ls === 0 && s.ss === 0, `storage ${label}: localStorage/sessionStorage empty`, JSON.stringify(s));
+      report(s.idb === 0 && s.caches === 0 && s.sw === 0, `storage ${label}: no IndexedDB, Cache Storage, service worker`, JSON.stringify(s));
+    };
+    await page.goto(origin + '/', { waitUntil: 'load' });
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(500);
+    await snapshot('after load and scroll');
+    await userFlow(page, origin, false);
+    await snapshot('after widget load and form submit');
+    report(setCookie.length === 0, 'storage: no Set-Cookie on any response', setCookie.join(' '));
+    await ctx.close();
+  } finally {
+    await browser.close();
+    await server.close();
+  }
 };
 
 const selected = process.argv.slice(2);

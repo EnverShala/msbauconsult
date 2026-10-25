@@ -119,6 +119,14 @@ else
   echo "SKIP build-ps1-parity"; SKIPPED=$((SKIPPED + 1))
 fi
 
+# 5e. SEC-03 statisch: keine Storage-/Cookie-API in main.js, kein Manifest
+sec03_static() {
+  n=$(grep -v '^ *//' assets/js/main.js | grep -cE 'localStorage|sessionStorage|document\.cookie|indexedDB|caches\.|serviceWorker')
+  [ "$n" -eq 0 ] || { echo "  main.js: Storage-API-Treffer: $n"; return 1; }
+  ! grep -qi 'manifest' index.html || { echo "  index.html: manifest-Link"; return 1; }
+}
+check static-sec03 sec03_static
+
 # 6. Struktur
 check structure node tools/structcheck.mjs index.html
 
@@ -134,16 +142,39 @@ check network node tools/netcheck.mjs index.html
 check motion node tools/motioncheck.mjs index.html
 check interact node tools/interactcheck.mjs
 check headers node tools/hardencheck.mjs headers
+check csp node tools/hardencheck.mjs csp
+check storage node tools/hardencheck.mjs storage
 
 # 10. Capture (Review-Material, kein Pixelvergleich)
 rm -rf "$REVIEW/full"; mkdir -p "$REVIEW/full"
 check capture node tools/shoot.mjs index.html "$REVIEW/full" page
 
-# 11. Groessen (informativ)
+# 11. Groessenbudget (FAIL): HTML+CSS+JS gzip -9 <= 51200 B, inkl. Fonts <= 122880 B
+budget() {
+  g=0
+  for f in index.html assets/css/main.css assets/js/main.js; do g=$((g + $(gzip -9 -c "$f" | wc -c | tr -d ' '))); done
+  fonts=0
+  for f in assets/fonts/*.woff2; do fonts=$((fonts + $(wc -c < "$f" | tr -d ' '))); done
+  t=$((g + fonts))
+  echo "  budget html+css+js gzip=$g / 51200"
+  echo "  budget +fonts=$t / 122880"
+  [ "$g" -le 51200 ] && [ "$t" -le 122880 ]
+}
+check budget budget
 echo "--- sizes (bytes / gzip -9) ---"
 for f in index.html assets/css/main.css assets/js/main.js assets/fonts/*.woff2 assets/img/*.avif assets/img/*.webp assets/img/*.jpg assets/img/*.png; do
   [ -f "$f" ] && echo "$f $(wc -c < "$f" | tr -d ' ') $(gzip -9 -c "$f" | wc -c | tr -d ' ')"
 done
+
+# 12. Lighthouse (Median aus 5 Laeufen; Exit 3 = Performance 99 = WARN)
+if [ "${VERIFY_LIGHTHOUSE:-1}" = "0" ]; then
+  echo "SKIP lighthouse"; SKIPPED=$((SKIPPED + 1))
+else
+  node tools/lighthouse.mjs; rc=$?
+  if [ "$rc" -eq 0 ]; then pass lighthouse
+  elif [ "$rc" -eq 3 ]; then echo "WARN lighthouse performance median=99"; WARNS=$((WARNS + 1))
+  else fail lighthouse; fi
+fi
 
 if [ "$FAILS" -ne 0 ]; then echo "$FAILS FAILED"; exit 1; fi
 note=""
