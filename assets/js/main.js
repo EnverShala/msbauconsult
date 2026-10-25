@@ -88,12 +88,15 @@
     if (reduceMotion.addEventListener) reduceMotion.addEventListener('change', onMotionChange);
     else if (reduceMotion.addListener) reduceMotion.addListener(onMotionChange);
 
-    resizeCanvas();
-    for (let i = 0; i < 40; i++) {
-        particles.push(new Particle());
-    }
-    if (reduceMotion.matches) drawFrame();
-    else start();
+    // Setup im ersten Frame: vermeidet erzwungenen Reflow (innerWidth) im Script-Task, schont TBT
+    requestAnimationFrame(() => {
+        resizeCanvas();
+        for (let i = 0; i < 40; i++) {
+            particles.push(new Particle());
+        }
+        if (reduceMotion.matches) drawFrame();
+        else start();
+    });
 
     // Rechtsdialoge (Impressum, Datenschutz): Klick-Delegation, Deep-Links, URL-Bereinigung
     const dialogs = {
