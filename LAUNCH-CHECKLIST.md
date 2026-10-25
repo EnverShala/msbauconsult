@@ -51,7 +51,7 @@ Offene Prüfungen vor dem Go-live. Alles hier ist lokal nicht prüfbar (kein PHP
 - [ ] Optional: securityheaders.com und Mozilla Observatory als Nachweis
 - [ ] DNS: `www` und Apex zeigen auf den Webspace; das Zertifikat deckt beide ab
 - [ ] Hoster erlaubt den FileInfo-Override (`Header`, `AddType` in `.htaccess`); sonst die betroffenen Blöcke entfernen und mit dem Hoster klären
-- [ ] Hochgeladen wurde nur der Inhalt von `dist/` (`sh tools/dist.sh`, vorher `sh build.sh`)
+- [ ] Hochgeladen wurde nur der Inhalt von `dist/` (`sh tools/dist.sh`, baut vorher selbst)
 
 ## Rechtstexte
 

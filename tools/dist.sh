@@ -1,19 +1,23 @@
 #!/bin/sh
-# Deploy-Hilfe: kopiert genau die Upload-Whitelist nach dist/ (gitignored). Aufruf: sh tools/dist.sh
+# Deploy-Hilfe: baut zuerst (CSS + ?v=-Stempel), kopiert dann genau die Upload-Whitelist nach dist/
+# (gitignored). Aufruf: sh tools/dist.sh
 set -eu
 cd "$(dirname "$0")/.."
+
+# Immer frisch bauen: sonst koennte ein altes main.css mit passendem alten Stempel deployt werden
+sh build.sh >/dev/null
 
 hash_of() {
   if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | cut -d' ' -f1
   else shasum -a 256 "$1" | cut -d' ' -f1; fi
 }
 
-# Stempel pruefen: ?v= in index.html muss zu sha256[0:8] der aktuellen Datei passen
+# Plausibilitaetspruefung nach dem Build: ?v= in index.html muss zu sha256[0:8] der aktuellen Datei passen
 for f in assets/css/main.css assets/js/main.js; do
   stamp=$(grep -oE "/$f\?v=[0-9a-f]{8}" index.html | head -n 1 | sed 's/.*?v=//' || true)
   want=$(hash_of "$f" | cut -c1-8)
   if [ -z "$stamp" ] || [ "$stamp" != "$want" ]; then
-    echo "Stempel veraltet - erst sh build.sh ausfuehren ($f: index.html=${stamp:-fehlt}, Datei=$want)" >&2
+    echo "Stempel passt nach dem Build nicht ($f: index.html=${stamp:-fehlt}, Datei=$want)" >&2
     exit 1
   fi
 done
