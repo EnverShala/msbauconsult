@@ -661,6 +661,12 @@ const groups = {
     report(w.color === '#85650F' && w.user === 'info@ms-bauconsult.de' && w.ans === 'sie' && w.cls === 'heizreport', 'consent widget container attributes', JSON.stringify(w));
     report(w.text === 'stub-ok', 'consent widget initialised despite late load (DOMContentLoaded replay)', String(w.text));
     report(w.native, 'consent document.addEventListener native again');
+    const after = await page.evaluate(() => ({
+      focus: document.activeElement?.id,
+      statusHidden: document.getElementById('wp-status').hidden,
+      own: Object.prototype.hasOwnProperty.call(document, 'addEventListener'),
+    }));
+    report(after.focus === 'wp_check_script' && after.statusHidden && !after.own, 'consent focus on widget container, status hidden, no own addEventListener property', JSON.stringify(after));
     report(w.consentHidden && !(await page.isVisible('#wp-consent')), 'consent box hidden after click');
     await page.evaluate(() => document.getElementById('wp-load').click());
     await page.waitForTimeout(200);
@@ -692,7 +698,36 @@ const groups = {
       empty: document.getElementById('wp-check').children.length === 0,
     }));
     report(e.consent && e.enabled && e.errVisible && e.msg === 'Der Wärmepumpen-Check konnte nicht geladen werden. Bitte versuchen Sie es später erneut.' && e.native && e.empty, 'consent error path restores box, button, message', JSON.stringify(e));
+    report((await err.page.evaluate(() => document.activeElement?.id)) === 'wp-load', 'consent error path focuses the load button');
     await err.ctx.close();
+
+    // Loading status and 15 s timeout (script request never answered)
+    {
+      const tctx = await newContext();
+      await tctx.route(TP, () => {}); // request stays pending
+      const tp = await tctx.newPage();
+      await tp.clock.install();
+      await tp.goto(origin + '/', { waitUntil: 'load' });
+      await tp.locator('#wp-load').scrollIntoViewIfNeeded();
+      await tp.click('#wp-load');
+      const loading = await tp.evaluate(() => {
+        const st = document.getElementById('wp-status');
+        return { text: st.textContent, hidden: st.hidden, live: st.getAttribute('aria-live'), focus: document.activeElement === st, disabled: document.getElementById('wp-load').disabled };
+      });
+      report(loading.text.startsWith('Wärmepumpen-Check wird geladen') && !loading.hidden && loading.live === 'polite' && loading.focus && loading.disabled, 'consent loading status announced and focused', JSON.stringify(loading));
+      await tp.clock.fastForward(16000);
+      const t = await tp.evaluate(() => ({
+        consent: !document.getElementById('wp-consent').hidden,
+        enabled: !document.getElementById('wp-load').disabled,
+        msg: document.getElementById('wp-error').textContent,
+        errVisible: !document.getElementById('wp-error').hidden,
+        statusHidden: document.getElementById('wp-status').hidden,
+        native: document.addEventListener.toString().includes('[native code]'),
+        focus: document.activeElement?.id,
+      }));
+      report(t.consent && t.enabled && t.errVisible && t.statusHidden && t.native && t.focus === 'wp-load' && t.msg.startsWith('Der Wärmepumpen-Check konnte nicht geladen werden'), 'consent 15 s timeout restores box, message and focus', JSON.stringify(t));
+      await tctx.close();
+    }
 
     if (process.argv.includes('--online')) {
       const octx = await newContext();

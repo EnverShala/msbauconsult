@@ -178,7 +178,8 @@
     const wpHost = document.getElementById('wp-check');
     const wpConsent = document.getElementById('wp-consent');
     const wpError = document.getElementById('wp-error');
-    if (wpLoad && wpHost && wpConsent && wpError) {
+    const wpStatus = document.getElementById('wp-status');
+    if (wpLoad && wpHost && wpConsent && wpError && wpStatus) {
         let wpBusy = false;
         wpLoad.addEventListener('click', () => {
             if (wpBusy) return;
@@ -194,34 +195,56 @@
             wpHost.appendChild(box);
             wpConsent.hidden = true;
             wpError.hidden = true;
+            // Ladehinweis (aria-live) erhaelt den Fokus, damit er beim Ausblenden des Buttons nicht verloren geht
+            wpStatus.textContent = 'Wärmepumpen-Check wird geladen …';
+            wpStatus.hidden = false;
+            wpStatus.focus({ preventScroll: true });
 
             // Das Widget registriert DOMContentLoaded, das beim spaeten Laden nie mehr feuert
-            const original = document.addEventListener;
             const late = [];
             document.addEventListener = function (type, fn, opts) {
                 if (type === 'DOMContentLoaded') late.push(fn);
-                else original.call(document, type, fn, opts);
+                else EventTarget.prototype.addEventListener.call(document, type, fn, opts);
             };
+            // Entfernt die Eigenschaft wieder, sodass wieder EventTarget.prototype.addEventListener gilt
+            const restore = () => { delete document.addEventListener; };
+            const hideStatus = () => { wpStatus.hidden = true; wpStatus.textContent = ''; };
             const script = document.createElement('script');
-            script.src = 'https://heizreport.de/js/heizreport_3.js';
-            script.async = true;
-            script.onload = () => {
-                document.addEventListener = original;
-                late.forEach(fn => {
-                    try { fn.call(document, new Event('DOMContentLoaded')); } catch (err) { console.error('[wpcheck]', err); }
-                });
-                box.focus({ preventScroll: true });
-            };
-            script.onerror = () => {
-                document.addEventListener = original;
+            let timer = 0;
+
+            const fail = () => {
+                clearTimeout(timer);
+                restore();
+                script.onload = script.onerror = null;
                 script.remove();
                 wpHost.replaceChildren();
+                hideStatus();
                 wpConsent.hidden = false;
                 wpLoad.disabled = false;
                 wpBusy = false;
                 wpError.textContent = 'Der Wärmepumpen-Check konnte nicht geladen werden. Bitte versuchen Sie es später erneut.';
                 wpError.hidden = false;
+                wpLoad.focus({ preventScroll: true });
             };
+
+            script.src = 'https://heizreport.de/js/heizreport_3.js';
+            script.async = true;
+            script.onload = () => {
+                clearTimeout(timer);
+                restore();
+                late.forEach(fn => {
+                    try {
+                        const ev = new Event('DOMContentLoaded');
+                        if (typeof fn === 'function') fn.call(document, ev);
+                        else if (fn && typeof fn.handleEvent === 'function') fn.handleEvent(ev);
+                    } catch (err) { console.error('[wpcheck]', err); }
+                });
+                hideStatus();
+                box.focus({ preventScroll: true });
+            };
+            script.onerror = fail;
+            // Haengt die Verbindung ohne load/error, nach 15 s wie bei einem Fehler aufraeumen
+            timer = setTimeout(fail, 15000);
             document.body.appendChild(script);
         });
     }
