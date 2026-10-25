@@ -22,10 +22,17 @@ const TYPES = {
 // Validation rules of sendMail.php. The mock below must be kept in sync with sendMail.php;
 // the parity group of tools/interactcheck.mjs guards the regex sources and limits.
 export const MAIL_RULES = {
-  NAME_RE: /^(?=(?:.*\p{L}){2})[\p{L}\p{M} .'\-]+$/u,
+  NAME_RE: /^(?=(?:.*\p{L}){2})[\p{L}\p{M} .'’\-]+$/u,
   PHONE_RE: /^\+?[0-9()\/\- ]+$/,
   EMAIL_RE: /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9](?:[A-Za-z0-9\-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9\-]*[A-Za-z0-9])?)*\.[A-Za-z]{2,}$/,
   PHONE_MIN_DIGITS: 6,
+  // PHP additionally runs filter_var(FILTER_VALIDATE_EMAIL): no leading/trailing dot in the local part,
+  // no consecutive dots, local part <= 64, total <= 254. Mirrored here (and in main.js emailOk).
+  emailOk(v) {
+    if (!MAIL_RULES.EMAIL_RE.test(v) || v.length > 254) return false;
+    const local = v.slice(0, v.lastIndexOf('@'));
+    return local.length <= 64 && !local.startsWith('.') && !local.endsWith('.') && !local.includes('..');
+  },
   MAX: { name: 100, email: 254, phone: 30, message: 5000 },
 };
 
@@ -36,25 +43,29 @@ const MSG = {
   required: 'Bitte füllen Sie alle Pflichtfelder aus.',
   nameLen: 'Der Name darf höchstens 100 Zeichen lang sein.',
   email: 'Bitte geben Sie eine gültige E-Mail-Adresse an.',
-  name: 'Bitte geben Sie Ihren Namen an (mindestens 2 Buchstaben).',
+  name: 'Bitte geben Sie Ihren Namen an (mindestens 2 Buchstaben; erlaubt sind Buchstaben, Leerzeichen, Punkt, Bindestrich und Apostroph).',
   phone: 'Bitte geben Sie eine gültige Telefonnummer an.',
   msgLen: 'Die Nachricht darf höchstens 5000 Zeichen lang sein.',
 };
 
+// PHP trim() strips only these ASCII characters (JS trim() also strips NBSP and other Unicode spaces)
+const phpTrim = (s) => s.replace(/^[ \t\n\r\0\x0B]+|[ \t\n\r\0\x0B]+$/g, '');
+
 // Emulates the POST branch of sendMail.php in the same order. Returns [status, body].
+// Order matters: the rate limit counts only submissions that pass validation and the bot checks.
 function mailDecision(state, contentType, raw) {
-  state.count += 1;
-  if (state.count > RATE_LIMIT) return [429, { error: MSG.rate }];
-  if (!String(contentType || '').includes('application/json')) return [400, { error: MSG.invalid }];
+  // Exact media type, parameters (charset) ignored
+  if (String(contentType || '').split(';')[0].trim().toLowerCase() !== 'application/json') return [400, { error: MSG.invalid }];
   let params;
   try { params = JSON.parse(raw); } catch { return [400, { error: MSG.invalid }]; }
   if (params === null || typeof params !== 'object' || Array.isArray(params)) return [400, { error: MSG.invalid }];
   const hp = params.hp_website;
-  const hpFilled = hp === true || (typeof hp === 'string' && hp !== '' && hp !== '0') || (typeof hp === 'number' && hp !== 0);
+  // Any non-empty string (also "0") counts as filled; non-string values other than null/undefined too
+  const hpFilled = hp === undefined || hp === null ? false : typeof hp === 'string' ? phpTrim(hp) !== '' : true;
   const t = params.t;
   const numeric = (typeof t === 'number' && Number.isFinite(t)) || (typeof t === 'string' && t.trim() !== '' && Number.isFinite(Number(t)));
   if (hpFilled || !numeric || Number(t) < 3000) return [200, { success: true }];
-  const f = (k) => (typeof params[k] === 'string' ? params[k].trim() : '');
+  const f = (k) => (typeof params[k] === 'string' ? phpTrim(params[k]) : '');
   const name = f('name'), email = f('email'), phone = f('phone'), message = f('message');
   const len = (s) => [...s].length;
   const R = MAIL_RULES;
@@ -66,7 +77,9 @@ function mailDecision(state, contentType, raw) {
     return [400, { error: MSG.phone }];
   }
   if (len(message) > R.MAX.message) return [400, { error: MSG.msgLen }];
-  if (!R.EMAIL_RE.test(email)) return [400, { error: MSG.email }];
+  if (!R.emailOk(email)) return [400, { error: MSG.email }];
+  state.count += 1;
+  if (state.count > RATE_LIMIT) return [429, { error: MSG.rate }];
   state.mails.push({ name, email, phone, message });
   return [200, { success: true }];
 }

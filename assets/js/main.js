@@ -230,11 +230,12 @@
     const form = document.getElementById('contact-form');
     if (form) {
         // Muss mit sendMail.php uebereinstimmen - geprueft von tools/interactcheck.mjs (parity)
-        const NAME_RE = /^(?=(?:.*\p{L}){2})[\p{L}\p{M} .'\-]+$/u;
+        const NAME_RE = /^(?=(?:.*\p{L}){2})[\p{L}\p{M} .'’\-]+$/u;
         const EMAIL_RE = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9](?:[A-Za-z0-9\-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9\-]*[A-Za-z0-9])?)*\.[A-Za-z]{2,}$/;
         const PHONE_RE = /^\+?[0-9()\/\- ]+$/;
         const PHONE_MIN_DIGITS = 6;
-        const MSG_FAIL = 'Senden fehlgeschlagen – bitte kontaktieren Sie mich per Telefon (+49 172 232 14 82) oder E-Mail (info@ms-bauconsult.de).';
+        const MSG_NAME = 'Bitte geben Sie Ihren Namen an (mindestens 2 Buchstaben; erlaubt sind Buchstaben, Leerzeichen, Punkt, Bindestrich und Apostroph).';
+        const MSG_FAIL ='Senden fehlgeschlagen – bitte kontaktieren Sie mich per Telefon (+49 172 232 14 82) oder E-Mail (info@ms-bauconsult.de).';
         const MSG_CHECK = 'Bitte prüfen Sie Ihre Eingaben.';
 
         form.noValidate = true;
@@ -249,6 +250,14 @@
         }));
         const len = s => Array.from(s).length;
 
+        // Regex plus die zusaetzlichen Pruefungen von PHPs filter_var (sendMail.php): kein Punkt am
+        // Anfang/Ende des lokalen Teils, keine doppelten Punkte, lokaler Teil <= 64, gesamt <= 254 Zeichen
+        const emailOk = v => {
+            if (!EMAIL_RE.test(v) || v.length > 254) return false;
+            const local = v.slice(0, v.lastIndexOf('@'));
+            return local.length <= 64 && local[0] !== '.' && local[local.length - 1] !== '.' && local.indexOf('..') === -1;
+        };
+
         const setStatus = (state, text) => {
             if (state) status.setAttribute('data-state', state);
             else status.removeAttribute('data-state');
@@ -258,10 +267,10 @@
         const check = (k, v) => {
             const max = el[k].maxLength;
             if (k === 'name') {
-                if (!NAME_RE.test(v)) return 'Bitte geben Sie Ihren Namen an (mindestens 2 Buchstaben).';
+                if (!NAME_RE.test(v)) return MSG_NAME;
             } else if (k === 'email') {
                 if (v === '') return 'Bitte geben Sie Ihre E-Mail-Adresse an.';
-                if (!EMAIL_RE.test(v)) return 'Bitte geben Sie eine gültige E-Mail-Adresse an.';
+                if (!emailOk(v)) return 'Bitte geben Sie eine gültige E-Mail-Adresse an.';
             } else if (k === 'phone') {
                 const digits = (v.match(/[0-9]/g) || []).length;
                 if (v !== '' && (!PHONE_RE.test(v) || digits < PHONE_MIN_DIGITS || len(v) > 30)) {
@@ -325,6 +334,7 @@
             button.textContent = 'Wird gesendet…';
             form.setAttribute('aria-busy', 'true');
             setStatus('busy', 'Ihre Nachricht wird gesendet …');
+            let abortTimer = 0;
             try {
                 // Zeitfalle: Server verwirft Anfragen mit t < 3000 ms still
                 await new Promise(r => setTimeout(r, Math.max(0, 3200 - performance.now())));
@@ -336,11 +346,20 @@
                     hp_website: el.hp_website.value,
                     t: Math.round(performance.now())
                 });
+                // AbortSignal.timeout fehlt in aelteren Browsern (Safari < 16, Chrome < 103)
+                let signal;
+                if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+                    signal = AbortSignal.timeout(15000);
+                } else if (typeof AbortController !== 'undefined') {
+                    const ctrl = new AbortController();
+                    abortTimer = setTimeout(() => ctrl.abort(), 15000);
+                    signal = ctrl.signal;
+                }
                 const res = await fetch('/sendMail.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body,
-                    signal: AbortSignal.timeout(15000)
+                    signal
                 });
                 const data = await res.json().catch(() => null);
                 if (res.ok && data && data.success) {
@@ -362,6 +381,7 @@
             } catch (err) {
                 setStatus('error', MSG_FAIL);
             } finally {
+                clearTimeout(abortTimer);
                 button.disabled = false;
                 button.textContent = label;
                 form.removeAttribute('aria-busy');

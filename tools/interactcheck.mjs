@@ -29,6 +29,8 @@ const post = (body, headers = { 'Content-Type': 'application/json' }) =>
     body: typeof body === 'string' ? body : JSON.stringify(body),
   }).then(async (r) => ({ status: r.status, json: await r.json().catch(() => null) }));
 
+const NAME_MSG = 'Bitte geben Sie Ihren Namen an (mindestens 2 Buchstaben; erlaubt sind Buchstaben, Leerzeichen, Punkt, Bindestrich und Apostroph).';
+
 const valid = () => ({
   name: 'Jo', email: 'jo@example.de', phone: '+49 (0) 711/123-45', message: 'Hallo', hp_website: '', t: 4000,
 });
@@ -64,13 +66,28 @@ const groups = {
     server.resetMail();
     r = await post({ ...valid(), hp_website: 'x' });
     report(ok(r) && server.mails.length === 0, 'mock honeypot fake success');
+    for (const hp of ['0', ' 0 ', 'false']) {
+      server.resetMail();
+      r = await post({ ...valid(), hp_website: hp });
+      report(ok(r) && server.mails.length === 0, 'mock honeypot "' + hp + '" counts as filled');
+    }
     server.resetMail();
     r = await post(JSON.stringify(valid()), { 'Content-Type': 'text/plain' });
     report(r.status === 400, 'mock text/plain -> 400', `status=${r.status}`);
+    for (const ct of ['text/plain;application/json', 'application/jsonx', 'application/json-patch+json', 'text/html; application/json']) {
+      server.resetMail();
+      r = await post(JSON.stringify(valid()), { 'Content-Type': ct });
+      report(r.status === 400 && server.mails.length === 0, 'mock content-type "' + ct + '" -> 400', 'status=' + r.status);
+    }
+    for (const ct of ['application/json', 'APPLICATION/JSON; charset=utf-8', ' application/json ;charset=UTF-8']) {
+      server.resetMail();
+      r = await post(JSON.stringify(valid()), { 'Content-Type': ct });
+      report(ok(r) && server.mails.length === 1, 'mock content-type "' + ct + '" accepted', 'status=' + r.status);
+    }
     server.resetMail();
     r = await post('{nope');
     report(r.status === 400, 'mock invalid JSON -> 400', `status=${r.status}`);
-    const NAME = 'Bitte geben Sie Ihren Namen an (mindestens 2 Buchstaben).';
+    const NAME = NAME_MSG;
     const EMAIL = 'Bitte geben Sie eine gültige E-Mail-Adresse an.';
     const PHONE = 'Bitte geben Sie eine gültige Telefonnummer an.';
     const bad = async (label, patch, msg) => {
@@ -83,6 +100,20 @@ const groups = {
     await bad('name "12"', { name: '12' }, NAME);
     await bad('email a@b', { email: 'a@b' }, EMAIL);
     await bad('email a@b.c', { email: 'a@b.c' }, EMAIL);
+    await bad('email a..b@example.de', { email: 'a..b@example.de' }, EMAIL);
+    await bad('email .a@example.de', { email: '.a@example.de' }, EMAIL);
+    await bad('email a.@example.de', { email: 'a.@example.de' }, EMAIL);
+    await bad('email local part 65 chars', { email: 'a'.repeat(65) + '@example.de' }, EMAIL);
+    await bad('name with digit "Bau 24"', { name: 'Bau 24' }, NAME);
+    await bad('name with comma "Meier, Hans"', { name: 'Meier, Hans' }, NAME);
+    for (const n of ['O’Brien', "D'Angelo", 'Dr. Müller-Schmidt']) {
+      server.resetMail();
+      const x = await post({ ...valid(), name: n });
+      report(ok(x) && server.mails.length === 1 && server.mails[0].name === n, 'mock name "' + n + '" accepted', 'status=' + x.status + ' ' + x.json?.error);
+    }
+    server.resetMail();
+    r = await post({ ...valid(), email: 'a'.repeat(64) + '@example.de' });
+    report(ok(r) && server.mails.length === 1, 'mock email local part 64 chars accepted', 'status=' + r.status);
     await bad('phone 12345', { phone: '12345' }, PHONE);
     await bad('phone abc123456', { phone: 'abc123456' }, PHONE);
     server.resetMail();
@@ -91,6 +122,14 @@ const groups = {
     server.resetMail();
     r = await post({ ...valid(), message: 'ä'.repeat(5001) });
     report(r.status === 400, 'mock message 5001 chars -> 400', `status=${r.status}`);
+    // The rate limit counts only submissions that would send a mail (validation errors, bots, bad content type do not)
+    server.resetMail();
+    for (let i = 0; i < 5; i += 1) await post({ ...valid(), email: 'a@b' });
+    for (let i = 0; i < 5; i += 1) await post({ ...valid(), hp_website: 'x' });
+    for (let i = 0; i < 5; i += 1) await post(JSON.stringify(valid()), { 'Content-Type': 'text/plain' });
+    for (let i = 0; i < 5; i += 1) await post({ ...valid(), t: 100 });
+    r = await post(valid());
+    report(ok(r) && server.mails.length === 1, 'mock rate limit not consumed by invalid / bot / wrong content-type requests', 'status=' + r.status);
     server.resetMail();
     const codes = [];
     let last;
@@ -115,6 +154,20 @@ const groups = {
     report(MAIL_RULES.NAME_RE.flags.includes('u') && /\/u', \$name\)/.test(php), 'parity name regex flag u');
     report(phoneSrc === MAIL_RULES.PHONE_RE.source, 'parity phone regex', `${phoneSrc} vs ${MAIL_RULES.PHONE_RE.source}`);
     report(emailSrc === MAIL_RULES.EMAIL_RE.source, 'parity email regex', `${emailSrc} vs ${MAIL_RULES.EMAIL_RE.source}`);
+    // Order and details of the PHP POST branch that the mock mirrors
+    const at = (needle) => php.indexOf(needle);
+    const iCt = at("$contentType !== 'application/json'");
+    const iHp = at('$hpFilled');
+    const iEmail = at('FILTER_VALIDATE_EMAIL');
+    const iRl = at('!checkRateLimit(');
+    const iMail = at('mail($recipient');
+    report(/\$contentType = strtolower\(trim\(explode\(';', \$_SERVER\['CONTENT_TYPE'\] \?\? ''\)\[0\]\)\);/.test(php) && iCt > 0, 'parity php exact content-type media type');
+    report(iCt > 0 && iHp > iCt && iEmail > iHp && iRl > iEmail && iMail > iRl, 'parity php order: content-type, bot checks, validation, rate limit, mail()', [iCt, iHp, iEmail, iRl, iMail].join());
+    report(/trim\(\$hp\) !== ''/.test(php), 'parity php honeypot any non-empty string');
+    report(/hash_hmac\('sha256'/.test(php) && /random_bytes\(32\)/.test(php) && /chmod\(\$path, 0600\)/.test(php) && !/md5\(/.test(php), 'parity php rate-limit hash is salted HMAC, no md5');
+    report(/sweepRateLimitFiles\(\$rateWindow\)/.test(php) && /glob\(sys_get_temp_dir\(\) \. '\/rl_\*\.json'/.test(php), 'parity php sweeps expired rate-limit files');
+    report(/\$parts = array_map\('trim', explode\(',', \$_SERVER\['HTTP_X_FORWARDED_FOR'\]\)\);\s+\$ip = end\(\$parts\);/.test(php), 'parity php X-Forwarded-For rightmost entry');
+    report(/Content-Transfer-Encoding: 8bit/.test(php) && /mb_encode_mimeheader\(/.test(php), 'parity php subject folded, 8bit transfer encoding');
     report(/preg_match_all\('\/\[0-9\]\/', \$phone\) < 6/.test(php) && MAIL_RULES.PHONE_MIN_DIGITS === 6, 'parity phone digit minimum');
     for (const [k, v] of Object.entries(MAIL_RULES.MAX)) {
       report(new RegExp(`\\$len\\(\\$${k}\\) > ${v}\\b`).test(php), `parity limit ${k}=${v}`);
@@ -125,6 +178,7 @@ const groups = {
       const r = lit(n);
       report(!!r && r.source === MAIL_RULES[n].source && r.flags === MAIL_RULES[n].flags, 'parity js ' + n, String(r));
     }
+    report(/local\.length <= 64/.test(js) && /v\.length > 254/.test(js) && /local\.indexOf\('\.\.'\) === -1/.test(js), 'parity js emailOk extra checks');
     report(/const PHONE_MIN_DIGITS = 6;/.test(js) && MAIL_RULES.PHONE_MIN_DIGITS === 6, 'parity js PHONE_MIN_DIGITS');
   },
 
@@ -327,17 +381,22 @@ const groups = {
     for (const n of ['A', ' ', '12']) {
       await fillAll({ name: n });
       await submit();
-      report(posts.length === 0 && (await inv('f-name')) === 'true' && (await txt('#f-name-err')) === 'Bitte geben Sie Ihren Namen an (mindestens 2 Buchstaben).', `form name "${n}" rejected`);
+      report(posts.length === 0 && (await inv('f-name')) === 'true' && (await txt('#f-name-err')) === NAME_MSG, `form name "${n}" rejected`);
     }
     await fillAll({ name: 'Jo', phone: '' });
     await page.evaluate(() => document.getElementById('f-name').blur());
     report((await inv('f-name')) === 'false' && !(await vis('#f-name-err')), 'form name "Jo" accepted');
+    for (const n of ['O’Brien', "D'Angelo"]) {
+      await page.fill('#f-name', n);
+      await page.evaluate(() => document.getElementById('f-name').blur());
+      report((await inv('f-name')) === 'false' && !(await vis('#f-name-err')), 'form name "' + n + '" accepted');
+    }
 
     // E-mail cases
-    for (const m of ['a@b', 'a@b.c']) {
+    for (const m of ['a@b', 'a@b.c', 'a..b@example.de', '.a@example.de', 'a.@example.de', 'a'.repeat(65) + '@example.de']) {
       await fillAll({ email: m });
       await submit();
-      report(posts.length === 0 && (await txt('#f-email-err')) === 'Bitte geben Sie eine gültige E-Mail-Adresse an.', `form email "${m}" rejected`);
+      report(posts.length === 0 && (await txt('#f-email-err')) === 'Bitte geben Sie eine gültige E-Mail-Adresse an.', `form email "${m.length > 30 ? m.slice(0, 12) + '...' : m}" rejected`);
     }
 
     // Phone filter
