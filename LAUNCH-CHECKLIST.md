@@ -50,7 +50,7 @@ Offene Prüfungen vor dem Go-live. Alles hier ist lokal nicht prüfbar (kein PHP
 - [ ] PageSpeed Insights (mobil) für `https://www.ms-bauconsult.de/`: Ziel 4×100; Screenshot oder JSON für README und PORTFOLIO. Lokal lag der Performance-Median bei 99 (siehe README, Kennzahlen): den Performance-Wert live ausdrücklich bestätigen und README/PORTFOLIO nur mit dem live gemessenen Wert aktualisieren
 - [ ] Optional: securityheaders.com und Mozilla Observatory als Nachweis
 - [ ] DNS: `www` und Apex zeigen auf den Webspace; das Zertifikat deckt beide ab
-- [ ] Hoster erlaubt den FileInfo-Override (`Header`, `AddType`, `ExpiresByType` in `.htaccess`); sonst die betroffenen Blöcke entfernen und mit dem Hoster klären
+- [ ] Hoster erlaubt den FileInfo-Override (`Header`, `AddType` in `.htaccess`); sonst die betroffenen Blöcke entfernen und mit dem Hoster klären
 - [ ] Hochgeladen wurde nur der Inhalt von `dist/` (`sh tools/dist.sh`, vorher `sh build.sh`)
 
 ## Rechtstexte
