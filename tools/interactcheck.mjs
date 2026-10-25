@@ -140,6 +140,156 @@ const groups = {
       await ctx.close();
     }
   },
+
+  async dialogs() {
+    const ctx = await newContext();
+    const page = await ctx.newPage();
+    await page.goto(origin + '/', { waitUntil: 'load' });
+    const settle = () => page.waitForTimeout(550);
+    const isOpen = (id) => page.evaluate((i) => document.getElementById(i).open, id);
+    const footerLink = (name) => page.locator(`footer a[data-dialog="${name}"]`);
+    const openVia = async (name) => {
+      const l = footerLink(name);
+      await l.scrollIntoViewIfNeeded();
+      await l.click();
+      await settle();
+    };
+    for (const name of ['impressum', 'datenschutz']) {
+      const id = `dlg-${name}`;
+      await footerLink(name).scrollIntoViewIfNeeded();
+      const widthBefore = await page.evaluate(() => document.documentElement.clientWidth);
+      await openVia(name);
+      report(await isOpen(id), `dialogs ${name} opens via footer`);
+      const focusOk = await page.evaluate((i) => document.activeElement === document.querySelector(`#${i} [data-close]`), id);
+      report(focusOk, `dialogs ${name} focus on close button`);
+      const loc = await page.evaluate(() => ({ p: location.pathname, h: location.hash }));
+      report(loc.p === '/' && loc.h === '', `dialogs ${name} location stays /`, JSON.stringify(loc));
+      const y0 = await page.evaluate(() => window.scrollY);
+      await page.mouse.move(40, 300);
+      await page.mouse.wheel(0, 600);
+      await page.waitForTimeout(300);
+      const y1 = await page.evaluate(() => window.scrollY);
+      report(y0 === y1, `dialogs ${name} page scroll locked`, `${y0} -> ${y1}`);
+      const widthOpen = await page.evaluate(() => document.documentElement.clientWidth);
+      report(widthOpen === widthBefore, `dialogs ${name} no gutter jump`, `${widthBefore} -> ${widthOpen}`);
+      // Esc closes, focus back on trigger, location exactly origin + "/"
+      await page.keyboard.press('Escape');
+      await settle();
+      report(!(await isOpen(id)), `dialogs ${name} Esc closes`);
+      const back = await page.evaluate(() => document.activeElement?.getAttribute('data-dialog'));
+      report(back === name, `dialogs ${name} focus returns to footer link`, String(back));
+      const href = await page.evaluate(() => location.href);
+      report(href === origin + '/', `dialogs ${name} after Esc location is origin + "/"`, href);
+      // Backdrop click closes
+      await openVia(name);
+      await page.mouse.click(40, 300);
+      await settle();
+      report(!(await isOpen(id)), `dialogs ${name} backdrop click closes`);
+      // Close button closes
+      await openVia(name);
+      await page.locator(`#${id} [data-close]`).click();
+      await settle();
+      report(!(await isOpen(id)), `dialogs ${name} close button closes`);
+    }
+    for (const sel of ['#contact-form a[data-dialog="datenschutz"]', '#waermepumpe a[data-dialog="datenschutz"]']) {
+      const l = page.locator(sel).first();
+      await l.scrollIntoViewIfNeeded();
+      await l.click();
+      await settle();
+      report(await isOpen('dlg-datenschutz'), `dialogs ${sel} opens datenschutz`);
+      await page.keyboard.press('Escape');
+      await settle();
+    }
+    // Modified click is not intercepted
+    const prevented = await page.evaluate(() => {
+      let dp = null;
+      const a = document.querySelector('footer a[data-dialog="impressum"]');
+      document.addEventListener('click', (e) => { dp = e.defaultPrevented; e.preventDefault(); }, { once: true });
+      a.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ctrlKey: true, button: 0 }));
+      return { dp, open: document.getElementById('dlg-impressum').open };
+    });
+    report(prevented.dp === false && prevented.open === false, 'dialogs ctrl-click not intercepted', JSON.stringify(prevented));
+    await ctx.close();
+
+    const rctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+    const rp = await rctx.newPage();
+    await rp.goto(origin + '/', { waitUntil: 'load' });
+    await rp.locator('footer a[data-dialog="impressum"]').click();
+    await rp.waitForTimeout(200);
+    const td = await rp.evaluate(() => getComputedStyle(document.getElementById('dlg-impressum')).transitionDuration);
+    report(td === '0s', 'dialogs reduced motion transitionDuration 0s', td);
+    await rctx.close();
+  },
+
+  async deeplinks() {
+    const cases = [
+      ['/impressum', 'impressum'], ['/impressum/', 'impressum'], ['/datenschutz', 'datenschutz'],
+      ['/#impressum', 'impressum'], ['/#datenschutz', 'datenschutz'],
+    ];
+    for (const [p, want] of cases) {
+      const ctx = await newContext();
+      const page = await ctx.newPage();
+      const bad = [];
+      page.on('response', (res) => { if (res.status() >= 400) bad.push(`${res.status()} ${res.url()}`); });
+      await page.goto(origin + p, { waitUntil: 'load' });
+      let cleaned = true;
+      await page.waitForFunction(() => location.pathname === '/' && location.hash === '', null, { timeout: 3000 }).catch(() => { cleaned = false; });
+      const st = await page.evaluate(() => ({
+        imp: document.getElementById('dlg-impressum').open,
+        ds: document.getElementById('dlg-datenschutz').open,
+        href: location.href,
+      }));
+      report(cleaned && st.href === origin + '/', `deeplinks ${p} URL cleaned to /`, st.href);
+      report(st.imp === (want === 'impressum') && st.ds === (want === 'datenschutz'), `deeplinks ${p} opens ${want} only`, JSON.stringify(st));
+      report(bad.length === 0, `deeplinks ${p} no response >= 400`, bad.join(' '));
+      await ctx.close();
+    }
+    {
+      const ctx = await newContext();
+      const page = await ctx.newPage();
+      await page.goto(origin + '/#contact', { waitUntil: 'load' });
+      await page.waitForFunction(() => location.hash === '', null, { timeout: 3000 }).catch(() => {});
+      await page.waitForTimeout(1200);
+      const st = await page.evaluate(() => ({
+        y: window.scrollY,
+        top: document.getElementById('contact').getBoundingClientRect().top,
+        vh: window.innerHeight,
+        hash: location.hash,
+        imp: document.getElementById('dlg-impressum').open || document.getElementById('dlg-datenschutz').open,
+      }));
+      report(st.y > 0 && st.top < st.vh && st.top > -st.vh / 2 && st.hash === '' && !st.imp, '/#contact scrolls, hash removed', JSON.stringify(st));
+      await ctx.close();
+    }
+    {
+      const ctx = await newContext();
+      const page = await ctx.newPage();
+      await page.goto(origin + '/index.html', { waitUntil: 'load' });
+      await page.waitForFunction(() => location.pathname === '/', null, { timeout: 3000 }).catch(() => {});
+      const href = await page.evaluate(() => location.href);
+      report(href === origin + '/', '/index.html -> /', href);
+      await ctx.close();
+    }
+  },
+
+  async legal() {
+    const ctx = await newContext();
+    const page = await ctx.newPage();
+    await page.goto(origin + '/', { waitUntil: 'load' });
+    const tx = (id) => page.evaluate((i) => document.getElementById(i).textContent.replace(/\s+/g, ' '), id);
+    const imp = await tx('dlg-impressum');
+    for (const s of ['Stettener Str. 24', '70734 Fellbach', '+49 (0) 172 232 14 82', 'info@ms-bauconsult.de', 'Verbraucherstreitbeilegung', 'Quelle: e-recht24.de', 'Deutsche Energie-Agentur (dena)']) {
+      report(imp.includes(s), `legal impressum contains "${s}"`);
+    }
+    report(!/Adobe Stock|Shutterstock/.test(imp), 'legal impressum without old image line');
+    const ds = await tx('dlg-datenschutz');
+    for (const s of ['Verantwortlicher Anbieter', 'Kontaktformular – technische Verarbeitung', 'Hosting und Server-Logfiles', 'Wärmepumpen-Check (heizreport.de)', 'Schriftarten (lokal)', 'Cookies, Tracking und lokaler Speicher', 'in gehashter Form', 'heiz.report', '§ 25 Abs. 1 TDDDG']) {
+      report(ds.includes(s), `legal datenschutz contains "${s}"`);
+    }
+    const href = await page.evaluate(() => document.querySelector('#dlg-datenschutz a[href^="https://"]')?.getAttribute('href'));
+    const rel = await page.evaluate(() => document.querySelector('#dlg-datenschutz a[href^="https://"]')?.getAttribute('rel'));
+    report(href === 'https://heizreport.de/datenschutz' && rel === 'noopener noreferrer', 'legal heizreport link with rel', `${href} ${rel}`);
+    await ctx.close();
+  },
 };
 
 const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
