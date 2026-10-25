@@ -1,5 +1,6 @@
-# MS Bauconsult - Apache-Konfiguration (Phase 3: saubere URLs, Weiterleitungen, Schutz der Entwicklungsdateien)
-# Phase 4 ergaenzt CSP/Security-Header, Kompression und Caching.
+# MS Bauconsult - Apache-Konfiguration
+# Abschnitte: Schutz der Entwicklungsdateien, saubere URLs und Weiterleitungen (Phase 3),
+# Sicherheits-Header/CSP, MIME-Typen, Kompression und Caching (Phase 4, am Dateiende).
 
 Options -Indexes
 ErrorDocument 404 /index.html
@@ -43,4 +44,63 @@ ErrorDocument 404 /index.html
 
     # (4) Rechtstexte intern als index.html ausliefern
     RewriteRule ^(impressum|datenschutz)/?$ /index.html [NC,L]
+</IfModule>
+
+# ---------------------------------------------------------------------------
+# Phase 4: Sicherheits-Header, MIME-Typen, Kompression, Caching
+# ---------------------------------------------------------------------------
+# CSP: genau EIN Header. Setzt der Hoster zusaetzlich eine eigene CSP, gilt die Schnittmenge
+# beider Header - dann die Hoster-CSP abschalten lassen (siehe LAUNCH-CHECKLIST).
+# default-src 'none'      : alles, was unten nicht ausdruecklich erlaubt ist, ist verboten.
+# script-src              : nur eigene Skripte plus der EINE heizreport-Widget-Pfad (wird erst nach
+#                           Klick-Einwilligung geladen); kein 'unsafe-inline' (SEC-02).
+# style-src 'unsafe-inline': das heizreport-Widget fuegt ein style-Element und style-Attribute per
+#                           innerHTML ein; die eigene Seite hat keine Inline-Styles.
+# img-src heiz.report     : Ergebnisbild des Widgets im letzten Schritt (kein data:).
+# connect-src             : 'self' = sendMail.php; heizreport.de/web/ = track.php und
+#                           wpCheckIntegration.php des Widgets.
+# frame-src 'none'        : das Widget nutzt kein iframe.
+# object-src/base-uri 'none', form-action 'self', frame-ancestors 'none': kein Plugin, keine
+#                           Basis-URL-Manipulation, Formulare nur an die eigene Domain, kein Einbetten.
+<IfModule mod_headers.c>
+    Header always set Content-Security-Policy "default-src 'none'; script-src 'self' https://heizreport.de/js/heizreport_3.js; style-src 'self' 'unsafe-inline'; img-src 'self' https://heiz.report; font-src 'self'; connect-src 'self' https://heizreport.de/web/; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    # sendMail.php setzt diese drei Header selbst (Fallback ohne .htaccess): Duplikate vermeiden
+    Header onsuccess unset X-Content-Type-Options
+    Header always set X-Content-Type-Options "nosniff"
+    Header onsuccess unset X-Frame-Options
+    Header always set X-Frame-Options "DENY"
+    Header onsuccess unset Referrer-Policy
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+    Header always set Cross-Origin-Opener-Policy "same-origin"
+
+    # Caching: HTML/PHP/robots/sitemap immer revalidieren, Assets (per ?v= bzw. neuem Dateinamen versioniert) 1 Jahr
+    Header set Cache-Control "no-cache"
+    <FilesMatch "\.(css|js|woff2|avif|webp|jpe?g|png)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+    <FilesMatch "^favicon\.svg$">
+        Header set Cache-Control "public, max-age=604800"
+    </FilesMatch>
+</IfModule>
+
+<IfModule mod_mime.c>
+    AddType text/javascript .js
+    AddType text/css .css
+    AddType image/svg+xml .svg
+    AddType image/avif .avif
+    AddType image/webp .webp
+    AddType font/woff2 .woff2
+    AddCharset utf-8 .html .css .js .svg .xml .txt
+</IfModule>
+
+# Kompression: Brotli bevorzugt, deflate als Rueckfall (jeweils eigenes IfModule)
+<IfModule mod_filter.c>
+    <IfModule mod_brotli.c>
+        AddOutputFilterByType BROTLI_COMPRESS text/html text/css text/javascript application/javascript application/json image/svg+xml application/xml text/xml text/plain
+    </IfModule>
+    <IfModule mod_deflate.c>
+        AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json image/svg+xml application/xml text/xml text/plain
+    </IfModule>
 </IfModule>
