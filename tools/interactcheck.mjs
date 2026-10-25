@@ -607,8 +607,8 @@ const groups = {
     await page.click('#menu-toggle');
     report((await exp()) === 'true' && (await panelVisible()), 'menu opens, aria-expanded true');
     const links = await page.$$eval('#mobile-menu a', (as) => as.map((a) => a.getAttribute('href') + '|' + a.textContent.trim()));
-    report(links.join() === '#about|Über mich,#services|Leistungen,#waermepumpe|Wärmepumpe,#contact|Kontakt,#contact|Projekt anfragen', 'menu has 4 section links + Projekt anfragen', links.join());
-    report(await page.isVisible('#mobile-menu a.btn-primary'), 'menu "Projekt anfragen" visible at 375');
+    report(links.join() === '#about|Über mich,#services|Leistungen,#waermepumpe|Wärmepumpe,#contact|Kontakt,#contact|Beratung anfragen', 'menu has 4 section links + Beratung anfragen', links.join());
+    report(await page.isVisible('#mobile-menu a.btn-primary'), 'menu "Beratung anfragen" visible at 375');
     await page.click('#mobile-menu a[href="#services"]');
     await page.waitForTimeout(900);
     const st = await page.evaluate(() => ({ href: location.href, act: document.activeElement.id }));
