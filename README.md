@@ -126,7 +126,7 @@ Gemessen am 2026-10-25 mit Lighthouse 13.5.0 (mobil, simulierte Drosselung, head
 
 Hinweise:
 
-- Der Performance-Median liegt bei 99, nicht bei 100. Alle sechs aufgezeichneten Läufe-Serien (Batches) der Phase 4 ergaben einen Median von 99; einzelne Läufe lagen darunter (z. B. 97 durch TBT-Ausreißer), keiner wurde ausgelassen.
+- Der Performance-Median liegt lokal bei 99, nicht bei 100. Von 17 aufgezeichneten Lauf-Serien (je Median aus 5 Läufen) ergaben 13 einen Median von 99, je eine 100 bzw. einen Ausreißer (85, Rechnerlast) und zwei 98; keine wurde ausgelassen. Der verbindliche Wert ist die Live-Messung mit PageSpeed Insights (siehe LAUNCH-CHECKLIST).
 - Lokal misst Lighthouse mit simulierter Drosselung; der Live-Wert aus PageSpeed Insights steht in der [LAUNCH-CHECKLIST.md](LAUNCH-CHECKLIST.md) noch aus.
 - Vor einer Nutzerinteraktion: 0 externe Anfragen (netcheck: 9 Requests, 0 fremd), keine Cookies, kein localStorage/sessionStorage.
 - axe-core 4.14.0: 0 Verstöße bei 375 und 1440 px für Seite, geöffnetes Menü, beide Rechtsdialoge und Formular-Fehlerzustand.
