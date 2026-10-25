@@ -70,6 +70,7 @@ try:
         os.remove(MARKER)
 except Exception as e:  # Hero ist optional
     print(f"HERO SKIPPED: {e}")
+    os.makedirs(os.path.dirname(MARKER), exist_ok=True)
     with open(MARKER, "w", encoding="utf-8") as f:
         f.write(f"Hero-Variante ausgelassen: {e}\n")
 
