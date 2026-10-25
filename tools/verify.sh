@@ -189,36 +189,29 @@ for f in index.html assets/css/main.css assets/js/main.js assets/fonts/*.woff2 a
   [ -f "$f" ] && echo "$f $(wc -c < "$f" | tr -d ' ') $(gzip -9 -c "$f" | wc -c | tr -d ' ')"
 done
 
-# 11b. Deploy-Whitelist (dist.sh): genau die Upload-Dateien, nichts Anderes
-EXPECTED_DIST=".htaccess
-assets/css/main.css
-assets/fonts/OFL-Cinzel.txt
-assets/fonts/OFL-PlusJakartaSans.txt
-assets/fonts/cinzel.woff2
-assets/fonts/pjs-italic.woff2
-assets/fonts/pjs.woff2
-assets/img/eee.png
-assets/img/og.jpg
-assets/img/portrait-1132.avif
-assets/img/portrait-1132.webp
-assets/img/portrait-480.avif
-assets/img/portrait-480.webp
-assets/img/portrait-800.avif
-assets/img/portrait-800.jpg
-assets/img/portrait-800.webp
-assets/js/main.js
-favicon.svg
-index.html
-robots.txt
-sendMail.php
-sitemap.xml"
+# 11b. Deploy-Whitelist (dist.sh, Quelle tools/dist-files.txt): alle Whitelist-Dateien vorhanden, sonst nur
+# Hero-Bilder; jede von index.html (ohne HTML-Kommentare) und main.css referenzierte Datei liegt in dist/;
+# keine Entwicklungsdateien und keine Dotfiles ausser .htaccess
 distcheck() {
-  sh tools/dist.sh >/dev/null || return 1
-  got=$(cd dist && find . -type f | sed 's#^\./##' | LC_ALL=C sort)
-  want=$(printf '%s
-' "$EXPECTED_DIST" | LC_ALL=C sort)
-  [ "$got" = "$want" ] || { echo "  dist weicht von der Whitelist ab"; return 1; }
-  [ -z "$(find dist -name '*.md' -o -name 'final.html' -o -path '*/tools/*' -o -path '*/src/*')" ]
+  sh tools/dist.sh >/dev/null 2>&1 || { echo "  tools/dist.sh fehlgeschlagen"; return 1; }
+  rc=0
+  for f in $(grep -vE '^[[:space:]]*(#|$)' tools/dist-files.txt | tr -d '\r'); do
+    [ -f "dist/$f" ] || { echo "  dist: fehlt $f"; rc=1; }
+  done
+  extra=$( (cd dist && find . -type f | sed 's#^\./##') | grep -vxF -f tools/dist-files.txt | grep -v '^assets/img/hero/' || true)
+  [ -z "$extra" ] || { echo "  dist: nicht in der Whitelist: $extra"; rc=1; }
+  missing=$(node -e '
+    const fs = require("fs");
+    const html = fs.readFileSync("index.html", "utf8").replace(/<!--[\s\S]*?-->/g, "");
+    const css = fs.readFileSync("assets/css/main.css", "utf8");
+    const refs = new Set([...html.matchAll(/\/(assets\/[^"'"'"'\s,?#)]+|favicon\.svg)/g)].map((m) => m[1]));
+    for (const m of css.matchAll(/url\(\.\.\/([^)?#]+)\)/g)) refs.add("assets/" + m[1]);
+    console.log([...refs].filter((r) => !fs.existsSync("dist/" + r)).join(" "));
+  ')
+  [ -z "$missing" ] || { echo "  dist: referenziert, aber nicht deployt: $missing"; rc=1; }
+  bad=$(find dist -name '*.md' -o -name 'final.html' -o -path '*/tools/*' -o -path '*/src/*' -o -path '*/preview/*' -o -name '.*' ! -name '.htaccess' -type f)
+  [ -z "$bad" ] || { echo "  dist: Entwicklungsdateien: $bad"; rc=1; }
+  return $rc
 }
 check dist distcheck
 

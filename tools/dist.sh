@@ -22,23 +22,8 @@ for f in assets/css/main.css assets/js/main.js; do
   fi
 done
 
-FILES=".htaccess index.html favicon.svg robots.txt sitemap.xml sendMail.php
-assets/css/main.css
-assets/js/main.js
-assets/fonts/cinzel.woff2
-assets/fonts/pjs.woff2
-assets/fonts/pjs-italic.woff2
-assets/fonts/OFL-Cinzel.txt
-assets/fonts/OFL-PlusJakartaSans.txt
-assets/img/og.jpg
-assets/img/eee.png
-assets/img/portrait-480.avif
-assets/img/portrait-480.webp
-assets/img/portrait-800.avif
-assets/img/portrait-800.webp
-assets/img/portrait-800.jpg
-assets/img/portrait-1132.avif
-assets/img/portrait-1132.webp"
+# Whitelist aus der gemeinsamen Datei (auch von verify.sh gelesen)
+FILES=$(grep -vE '^[[:space:]]*(#|$)' tools/dist-files.txt | tr -d '\r')
 
 # Hero-Bilder nur, wenn ausserhalb von HTML-Kommentaren referenziert
 if awk 'BEGIN{c=0} { s=$0; out="";

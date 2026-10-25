@@ -22,7 +22,7 @@ Versionierung: Der Build stempelt `?v=<sha256[0:8]>` für `main.css` und `main.j
 sh tools/dist.sh
 ```
 
-`tools/dist.sh` führt zuerst `sh build.sh` aus (damit `main.css` und die `?v=`-Stempel immer zum aktuellen Stand von `index.html` und `src/input.css` passen), prüft danach die Stempel und kopiert genau die Upload-Whitelist nach `dist/` (per `.gitignore` ausgeschlossen). Der Inhalt von `dist/` wird per FTP in das Web-Root des Hosters geladen. Nicht deployt werden `final.html`, `src/`, `tools/`, `preview/`, `.planning/`, `*.md` und die Build-Dateien.
+`tools/dist.sh` führt zuerst `sh build.sh` aus (damit `main.css` und die `?v=`-Stempel immer zum aktuellen Stand von `index.html` und `src/input.css` passen), prüft danach die Stempel und kopiert genau die Upload-Whitelist aus `tools/dist-files.txt` nach `dist/` (per `.gitignore` ausgeschlossen). Der Inhalt von `dist/` wird per FTP in das Web-Root des Hosters geladen. Nicht deployt werden `final.html`, `src/`, `tools/`, `preview/`, `.planning/`, `*.md` und die Build-Dateien.
 
 Setzt der Hoster serverseitig eine eigene Content-Security-Policy, gelten beide Header als Schnittmenge. Es darf nur die CSP aus `.htaccess` aktiv sein; die Prüfung steht in [LAUNCH-CHECKLIST.md](LAUNCH-CHECKLIST.md).
 
@@ -64,7 +64,8 @@ assets/fonts/         selbst gehostete woff2-Schriften
 assets/img/           optimierte Bilder
 dist/                 Deploy-Ausgabe von tools/dist.sh (gitignored)
 tools/                nur Entwicklung (Prüfung, Asset-Rezepte)
-tools/dist.sh         Deploy-Whitelist nach dist/
+tools/dist.sh         Build und Deploy-Whitelist nach dist/
+tools/dist-files.txt  Upload-Whitelist (einzige Quelle für dist.sh und verify.sh)
 tools/hardencheck.mjs Header, CSP, Storage, axe, Zielgrößen, Clipping, Tastatur
 tools/lighthouse.mjs  Lighthouse, Median aus 5 Läufen
 tools/assets-src/     Bildquellen für tools/build-images.py

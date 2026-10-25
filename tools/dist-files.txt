@@ -1,0 +1,25 @@
+# Upload-Whitelist (einzige Quelle): von tools/dist.sh kopiert, von tools/verify.sh (dist) geprueft.
+# Ein Pfad je Zeile, relativ zum Projektstamm; Leerzeilen und #-Zeilen werden ignoriert.
+# assets/img/hero/* kommt automatisch dazu, sobald der <picture>-Block in index.html aktiv ist.
+.htaccess
+index.html
+favicon.svg
+robots.txt
+sitemap.xml
+sendMail.php
+assets/css/main.css
+assets/js/main.js
+assets/fonts/cinzel.woff2
+assets/fonts/pjs.woff2
+assets/fonts/pjs-italic.woff2
+assets/fonts/OFL-Cinzel.txt
+assets/fonts/OFL-PlusJakartaSans.txt
+assets/img/og.jpg
+assets/img/eee.png
+assets/img/portrait-480.avif
+assets/img/portrait-480.webp
+assets/img/portrait-800.avif
+assets/img/portrait-800.webp
+assets/img/portrait-800.jpg
+assets/img/portrait-1132.avif
+assets/img/portrait-1132.webp
