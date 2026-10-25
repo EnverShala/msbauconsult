@@ -110,7 +110,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
         // Time trap: forms submitted faster than 3 s after page load are bots
         // Return fake success so attackers learn nothing about the mechanism
         $elapsed = $params['t'] ?? null;
-        if (!empty($params['website']) || !is_numeric($elapsed) || $elapsed < 3000) {
+        if (!empty($params['hp_website']) || !is_numeric($elapsed) || $elapsed < 3000) {
             http_response_code(200);
             echo json_encode(['success' => true]);
             exit;

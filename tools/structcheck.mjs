@@ -57,10 +57,10 @@ const byName = Object.fromEntries(fields.map((t) => [t.match(/\sname="([^"]+)"/)
 const names = Object.keys(byName).sort().join(',');
 check(
   'form-fields',
-  names === 'email,message,name,phone,website' &&
+  names === 'email,hp_website,message,name,phone' &&
     ['name', 'email', 'message'].every((n) => /\srequired\b/.test(byName[n])) &&
     /type="email"/.test(byName.email || '') && /type="tel"/.test(byName.phone || '') &&
-    /tabindex="-1"/.test(byName.website || '') && /autocomplete="off"/.test(byName.website || ''),
+    /tabindex="-1"/.test(byName.hp_website || '') && /autocomplete="off"/.test(byName.hp_website || ''),
   'fields=' + names,
 );
 const formTag = (form.match(/^<form[^>]*>/) || [''])[0];
