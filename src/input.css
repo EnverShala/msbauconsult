@@ -145,6 +145,10 @@
             linear-gradient(to right, rgba(197, 155, 39, 0.22) 1px, transparent 1px),
             linear-gradient(to bottom, rgba(197, 155, 39, 0.22) 1px, transparent 1px);
     }
+    /* Mobil: ohne seitlichen Verlauf wirkt das Raster kräftiger → abschwächen */
+    @media (max-width: 639px) {
+        #hero-canvas { opacity: .32; }
+    }
 
 /* Spotlight-Karten (ersetzt das frühere Inline-Style, CSP) */
 .spotlight-card:hover{background:radial-gradient(600px circle at var(--x,50%) var(--y,50%),rgba(212,175,55,.12),rgba(255,255,255,.95) 40%)}

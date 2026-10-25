@@ -29,13 +29,13 @@
         canvas.width = Math.round(w * dpr);
         canvas.height = Math.round(h * dpr);
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        const count = Math.round(Math.min(45, Math.max(16, (w * h) / 28800)));
+        const count = Math.round(Math.min(45, Math.max(w < 640 ? 10 : 16, (w * h) / (w < 640 ? 36000 : 28800))));
         while (nodes.length < count) {
             nodes.push({
                 x: Math.random() * w,
                 y: Math.random() * h,
-                vx: (Math.random() - 0.5) * 0.8,
-                vy: (Math.random() - 0.5) * 0.8,
+                vx: (Math.random() - 0.5) * 0.4,
+                vy: (Math.random() - 0.5) * 0.4,
                 r: Math.random() * 2 + 1.5
             });
         }
@@ -56,8 +56,8 @@
                 const dx = mouse.x - n.x, dy = mouse.y - n.y;
                 const d = Math.sqrt(dx * dx + dy * dy);
                 if (d < REPEL && d > 0) {
-                    n.x -= (dx / d) * 1.5;
-                    n.y -= (dy / d) * 1.5;
+                    n.x -= (dx / d) * 0.8;
+                    n.y -= (dy / d) * 0.8;
                 }
             }
             ctx.beginPath();
