@@ -1,7 +1,7 @@
 // Usage: node tools/interactcheck.mjs [group ...]  -> exit 0 iff no FAIL
 // Interaction checks against the dev server with the sendMail.php mock.
-// Later plans add groups: dialogs, deeplinks, form, anchors, menu, consent.
-// The flag --online is reserved (checks against a live host).
+// Groups: server, mock, parity, paths, dialogs, deeplinks, legal, form, anchors, menu, consent.
+// Flag --online (consent group only, not used by verify.sh): loads the real heizreport script, INFO only.
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from './node_modules/playwright/index.mjs';
@@ -431,6 +431,225 @@ const groups = {
     const st = await page.evaluate(() => [localStorage.length, sessionStorage.length, document.cookie]);
     report(st[0] === 0 && st[1] === 0 && st[2] === '', 'form no storage and no cookies', JSON.stringify(st));
     await ctx.close();
+  },
+  async anchors() {
+    const settle = async (page) => {
+      let prev = -1;
+      for (let i = 0; i < 40; i += 1) {
+        const y = await page.evaluate(() => window.scrollY);
+        if (y === prev) return;
+        prev = y;
+        await page.waitForTimeout(120);
+      }
+    };
+    const topOf = (page, id) => page.evaluate((i) => document.getElementById(i).getBoundingClientRect().top, id);
+    const near = (v, c, tol) => Math.abs(v - c) <= tol;
+    const ctx = await newContext();
+    const page = await ctx.newPage();
+
+    // Deep link -> close dialog -> nav click keeps location exactly origin + "/"
+    await page.goto(origin + '/#impressum', { waitUntil: 'load' });
+    await page.waitForFunction(() => location.hash === '', null, { timeout: 3000 }).catch(() => {});
+    await page.waitForTimeout(600);
+    report(await page.evaluate(() => document.getElementById('dlg-impressum').open), 'anchors deep link /#impressum opens dialog');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(550);
+    await page.click('nav a[href="#services"]');
+    await settle(page);
+    const href0 = await page.evaluate(() => location.href);
+    report(href0 === origin + '/', 'anchors after /#impressum + close + nav click location is origin + "/"', href0);
+
+    // Fresh page: nav link
+    await page.goto(origin + '/', { waitUntil: 'load' });
+    await page.click('nav a[href="#services"]');
+    await settle(page);
+    const st = await page.evaluate(() => ({ href: location.href, act: document.activeElement.id }));
+    report(st.href === origin + '/', 'anchors nav "Leistungen" leaves no hash', st.href);
+    const t1 = await topOf(page, 'services');
+    report(near(t1, 112, 40), 'anchors #services top near 112 px (scroll-mt-28)', String(t1));
+    report(st.act === 'services', 'anchors focus moves to #services', st.act);
+
+    // Card button
+    const card = page.locator('#services a.btn-secondary').first();
+    await card.scrollIntoViewIfNeeded();
+    const cardHref = await card.getAttribute('href');
+    await card.click();
+    await settle(page);
+    const st2 = await page.evaluate(() => ({ href: location.href, act: document.activeElement.id }));
+    const t2 = await topOf(page, 'contact');
+    report(cardHref === '#contact' && st2.href === origin + '/' && st2.act === 'contact' && near(t2, 112, 40), 'anchors card button -> #contact, no hash, focus', JSON.stringify({ cardHref, ...st2, t2 }));
+
+    // Brand link from a scrolled position
+    await page.click('nav a[href="#top"]');
+    await settle(page);
+    const st3 = await page.evaluate(() => ({ y: window.scrollY, href: location.href }));
+    report(st3.y < 5 && st3.href === origin + '/', 'anchors brand link scrolls to top, no hash', JSON.stringify(st3));
+
+    // Skip link
+    await page.goto(origin + '/', { waitUntil: 'load' });
+    await page.keyboard.press('Tab');
+    const onSkip = await page.evaluate(() => document.activeElement.getAttribute('href'));
+    await page.keyboard.press('Enter');
+    await settle(page);
+    const st4 = await page.evaluate(() => ({ act: document.activeElement.id, href: location.href }));
+    report(onSkip === '#main' && st4.act === 'main' && st4.href === origin + '/', 'anchors skip link focuses main, no hash', JSON.stringify({ onSkip, ...st4 }));
+
+    // Ctrl-click not intercepted
+    const dp = await page.evaluate(() => {
+      let v = null;
+      const a = document.querySelector('nav a[href="#about"]');
+      document.addEventListener('click', (e) => { v = e.defaultPrevented; e.preventDefault(); }, { once: true });
+      a.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ctrlKey: true, button: 0 }));
+      return v;
+    });
+    report(dp === false, 'anchors ctrl-click not intercepted', String(dp));
+    await ctx.close();
+
+    // Reduced motion: instant jump
+    const rctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+    const rp = await rctx.newPage();
+    await rp.goto(origin + '/', { waitUntil: 'load' });
+    await rp.click('nav a[href="#contact"]');
+    await rp.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+    const rt = await topOf(rp, 'contact');
+    report(near(rt, 112, 40), 'anchors reduced motion jumps instantly', String(rt));
+    await rctx.close();
+  },
+
+  async menu() {
+    const ctx = await newContext({ width: 375, height: 800 });
+    const page = await ctx.newPage();
+    await page.goto(origin + '/', { waitUntil: 'load' });
+    const exp = () => page.getAttribute('#menu-toggle', 'aria-expanded');
+    const panelVisible = () => page.isVisible('#mobile-menu');
+    report(await page.isVisible('#menu-toggle'), 'menu toggle visible at 375');
+    report((await exp()) === 'false' && !(await panelVisible()), 'menu closed initially');
+    await page.click('#menu-toggle');
+    report((await exp()) === 'true' && (await panelVisible()), 'menu opens, aria-expanded true');
+    const links = await page.$$eval('#mobile-menu a', (as) => as.map((a) => a.getAttribute('href') + '|' + a.textContent.trim()));
+    report(links.join() === '#about|Über mich,#services|Leistungen,#waermepumpe|Wärmepumpe,#contact|Kontakt,#contact|Projekt anfragen', 'menu has 4 section links + Projekt anfragen', links.join());
+    report(await page.isVisible('#mobile-menu a.btn-primary'), 'menu "Projekt anfragen" visible at 375');
+    await page.click('#mobile-menu a[href="#services"]');
+    await page.waitForTimeout(900);
+    const st = await page.evaluate(() => ({ href: location.href, act: document.activeElement.id }));
+    report(!(await panelVisible()) && (await exp()) === 'false' && st.href === origin + '/' && st.act === 'services', 'menu link closes panel, no hash, #services focused', JSON.stringify(st));
+    await page.click('#menu-toggle');
+    await page.keyboard.press('Escape');
+    const act = await page.evaluate(() => document.activeElement.id);
+    report(!(await panelVisible()) && act === 'menu-toggle' && (await exp()) === 'false', 'menu Esc closes and focuses toggle', act);
+    await page.click('#menu-toggle');
+    await page.setViewportSize({ width: 1100, height: 800 });
+    await page.waitForTimeout(150);
+    report(!(await panelVisible()) && !(await page.isVisible('#menu-toggle')) && (await exp()) === 'false', 'menu closes when viewport grows to 1100');
+    await ctx.close();
+
+    for (const w of [320, 360, 375]) {
+      const c = await newContext({ width: w, height: 800 });
+      const p = await c.newPage();
+      await p.goto(origin + '/', { waitUntil: 'load' });
+      const m = await p.evaluate(() => {
+        const de = document.documentElement;
+        const pill = document.querySelector('nav > div > div').getBoundingClientRect();
+        const t = document.getElementById('menu-toggle').getBoundingClientRect();
+        const n = [...document.querySelectorAll('nav span')].find((e) => e.textContent === 'MUHAMED SHALA');
+        const lh = parseFloat(getComputedStyle(n).lineHeight);
+        return { sw: de.scrollWidth, cw: de.clientWidth, gap: pill.right - t.right, h: n.getBoundingClientRect().height, lh };
+      });
+      report(m.sw <= m.cw, `menu no horizontal overflow at ${w}`, JSON.stringify(m));
+      report(m.gap >= 8, `menu toggle inside pill (>= 8 px) at ${w}`, JSON.stringify(m));
+      report(m.h <= 1.5 * m.lh, `menu brand name on one line at ${w}`, JSON.stringify(m));
+      await c.close();
+    }
+  },
+
+  async consent() {
+    const TP = /heizreport\.de|heiz\.report/;
+    const STUB = "document.addEventListener('DOMContentLoaded', () => { document.getElementById('wp_check_script').textContent = 'stub-ok'; });";
+    const open = async (handler) => {
+      const ctx = await newContext();
+      const counter = { n: 0 };
+      await ctx.route(TP, (route) => { counter.n += 1; return handler(route); });
+      const page = await ctx.newPage();
+      const log = [];
+      page.on('request', (r) => { if (TP.test(r.url())) log.push(r.url()); });
+      await page.goto(origin + '/', { waitUntil: 'load' });
+      return { ctx, page, counter, log };
+    };
+    const stubbed = (route) => (/heizreport_3\.js/.test(route.request().url())
+      ? route.fulfill({ status: 200, contentType: 'application/javascript', body: STUB })
+      : route.abort());
+
+    const { ctx, page, counter, log } = await open(stubbed);
+    await page.locator('#waermepumpe').scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(500);
+    report(counter.n === 0 && log.length === 0, 'consent no third-party request before click (route counter + request log)', `${counter.n}/${log.length}`);
+    await page.locator('#wp-load').scrollIntoViewIfNeeded();
+    await page.click('#wp-load');
+    await page.waitForFunction(() => document.getElementById('wp_check_script')?.textContent === 'stub-ok', null, { timeout: 5000 }).catch(() => {});
+    const w = await page.evaluate(() => {
+      const b = document.getElementById('wp_check_script');
+      return {
+        text: b?.textContent,
+        color: b?.getAttribute('data-primary-color'),
+        user: b?.getAttribute('data-heizreport-user'),
+        ans: b?.getAttribute('data-heizreport-ansprache'),
+        cls: b?.className,
+        native: document.addEventListener.toString().includes('[native code]'),
+        consentHidden: document.getElementById('wp-consent').hidden,
+      };
+    });
+    report(w.color === '#85650F' && w.user === 'info@ms-bauconsult.de' && w.ans === 'sie' && w.cls === 'heizreport', 'consent widget container attributes', JSON.stringify(w));
+    report(w.text === 'stub-ok', 'consent widget initialised despite late load (DOMContentLoaded replay)', String(w.text));
+    report(w.native, 'consent document.addEventListener native again');
+    report(w.consentHidden && !(await page.isVisible('#wp-consent')), 'consent box hidden after click');
+    await page.evaluate(() => document.getElementById('wp-load').click());
+    await page.waitForTimeout(200);
+    const scripts = await page.evaluate(() => document.querySelectorAll('script[src="https://heizreport.de/js/heizreport_3.js"]').length);
+    report(scripts === 1, 'consent exactly one heizreport script after second click', String(scripts));
+    const stor = await page.evaluate(() => [localStorage.length, sessionStorage.length, document.cookie]);
+    report(stor[0] === 0 && stor[1] === 0 && stor[2] === '', 'consent no storage and no cookies', JSON.stringify(stor));
+    const before = counter.n;
+    counter.n = 0;
+    log.length = 0;
+    await page.reload({ waitUntil: 'load' });
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(500);
+    report(before >= 1, 'consent script request went through route after click', String(before));
+    report((await page.isVisible('#wp-consent')) && counter.n === 0 && log.length === 0, 'consent box visible again after reload, no third-party request', `${counter.n}/${log.length}`);
+    await ctx.close();
+
+    // Error path
+    const err = await open((route) => route.abort());
+    await err.page.locator('#wp-load').scrollIntoViewIfNeeded();
+    await err.page.click('#wp-load');
+    await err.page.waitForSelector('#wp-error:not([hidden])', { timeout: 5000 }).catch(() => {});
+    const e = await err.page.evaluate(() => ({
+      consent: !document.getElementById('wp-consent').hidden,
+      enabled: !document.getElementById('wp-load').disabled,
+      msg: document.getElementById('wp-error').textContent,
+      errVisible: !document.getElementById('wp-error').hidden,
+      native: document.addEventListener.toString().includes('[native code]'),
+      empty: document.getElementById('wp-check').children.length === 0,
+    }));
+    report(e.consent && e.enabled && e.errVisible && e.msg === 'Der Wärmepumpen-Check konnte nicht geladen werden. Bitte versuchen Sie es später erneut.' && e.native && e.empty, 'consent error path restores box, button, message', JSON.stringify(e));
+    await err.ctx.close();
+
+    if (process.argv.includes('--online')) {
+      const octx = await newContext();
+      await octx.route(/heizreport\.de\/web\//, (route) => route.abort());
+      const op = await octx.newPage();
+      try {
+        await op.goto(origin + '/', { waitUntil: 'load' });
+        await op.locator('#wp-load').scrollIntoViewIfNeeded();
+        await op.click('#wp-load');
+        await op.waitForFunction(() => document.querySelector('#wp_check_script')?.children.length > 0, null, { timeout: 15000 });
+        console.log('INFO consent --online: real widget rendered child elements within 15 s');
+      } catch (x) {
+        console.log(`INFO consent --online: widget did not render within 15 s (${String(x.message).split('\n')[0]})`);
+      }
+      await octx.close();
+    }
   },
 };
 
