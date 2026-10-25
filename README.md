@@ -14,7 +14,7 @@ sh build.sh --watch
 
 `.\build.ps1` gilt für Windows, `sh build.sh` für Git Bash, Linux und macOS, `--watch` für die Entwicklung. Das Skript lädt beim ersten Lauf die gepinnte Binärdatei (v3.4.17) und prüft ihren SHA-256-Hash. Die Binärdatei ist per `.gitignore` ausgeschlossen, die erzeugte `assets/css/main.css` wird eingecheckt.
 
-Versionierung: Der Build stempelt `?v=<sha256[0:8]>` für `main.css` und `main.js` in `index.html` (der Watch-Modus stempelt nicht). Diese beiden Dateien werden ein Jahr als `immutable` gecacht, die neue URL erzwingt das Nachladen. Schriften und Bilder werden ebenfalls ein Jahr gecacht, tragen aber keinen Versionsparameter: Eine geänderte Schrift oder ein geändertes Bild braucht deshalb einen neuen Dateinamen. Als Alternative wäre ein Dateinamen-Hash über einen h5bp-Rewrite möglich; das ist nur dokumentiert, nicht umgesetzt.
+Versionierung: Der Build stempelt `?v=<sha256[0:8]>` für `main.css` und `main.js` in `index.html` (der Watch-Modus stempelt nicht). Nur diese beiden Dateien werden ein Jahr als `immutable` gecacht, die neue URL erzwingt das Nachladen. Schriften und Bilder tragen keinen Versionsparameter (`tools/build-images.py` schreibt unter denselben Namen) und werden deshalb nur 30 Tage (`max-age=2592000`) ohne `immutable` gecacht: Ein geändertes Bild oder eine geänderte Schrift kommt spätestens nach 30 Tagen an, sofort nur mit neuem Dateinamen.
 
 ## Deploy
 

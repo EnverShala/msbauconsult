@@ -98,7 +98,8 @@ export function htaccessHeaders(root) {
 function cacheControl(file) {
   const base = path.basename(file);
   if (base === 'favicon.svg') return 'public, max-age=604800';
-  if (/\.(css|js|woff2|avif|webp|jpe?g|png)$/.test(base)) return 'public, max-age=31536000, immutable';
+  if (/\.(css|js)$/.test(base)) return 'public, max-age=31536000, immutable';
+  if (/\.(woff2|avif|webp|jpe?g|png)$/.test(base)) return 'public, max-age=2592000';
   return 'no-cache';
 }
 

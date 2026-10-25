@@ -63,14 +63,15 @@ const groups = {
       const jsUrl = idx.match(/\/assets\/js\/main\.js\?v=[0-9a-f]{8}/)?.[0];
       report(Boolean(cssUrl && jsUrl), 'headers: index.html carries ?v= stamps');
       const IMMUTABLE = 'public, max-age=31536000, immutable';
+      const MONTH = 'public, max-age=2592000';
       const targets = [
         ['/', 200, 'no-cache', 'index.html'],
         ['/impressum', 200, 'no-cache', 'index.html'],
         ['/index.html', 200, 'no-cache', 'index.html'],
         [cssUrl, 200, IMMUTABLE, 'assets/css/main.css'],
         [jsUrl, 200, IMMUTABLE, 'assets/js/main.js'],
-        ['/assets/fonts/pjs.woff2', 200, IMMUTABLE, null],
-        ['/assets/img/portrait-800.avif', 200, IMMUTABLE, null],
+        ['/assets/fonts/pjs.woff2', 200, MONTH, null],
+        ['/assets/img/portrait-800.avif', 200, MONTH, null],
         ['/favicon.svg', 200, 'public, max-age=604800', 'favicon.svg'],
         ['/robots.txt', 200, 'no-cache', 'robots.txt'],
         ['/does-not-exist', 404, null, null],
