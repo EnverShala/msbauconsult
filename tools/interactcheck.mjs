@@ -41,7 +41,7 @@ const groups = {
       const r = await fetch(origin + p);
       const body = await r.text();
       report(
-        r.status === 200 && (r.headers.get('content-type') || '').includes('text/html') && body.includes('<title>MS Bauconsult'),
+        r.status === 200 && (r.headers.get('content-type') || '').includes('text/html') && /<title>[^<]*MS Bauconsult[^<]*<\/title>/.test(body),
         `server ${p} -> index.html`,
         `status=${r.status}`,
       );
