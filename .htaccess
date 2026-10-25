@@ -64,7 +64,9 @@ ErrorDocument 404 /index.html
 #                           Basis-URL-Manipulation, Formulare nur an die eigene Domain, kein Einbetten.
 <IfModule mod_headers.c>
     Header always set Content-Security-Policy "default-src 'none'; script-src 'self' https://heizreport.de/js/heizreport_3.js; style-src 'self' 'unsafe-inline'; img-src 'self' https://heiz.report; font-src 'self'; connect-src 'self' https://heizreport.de/web/; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
-    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    # HSTS ohne includeSubDomains: unbekannte Subdomains des Hosters (webmail., autodiscover. ...) ohne TLS
+    # wuerden sonst ein Jahr gesperrt. Erstdeploy mit max-age=300 testen, dann 31536000 (LAUNCH-CHECKLIST).
+    Header always set Strict-Transport-Security "max-age=31536000"
     # sendMail.php setzt diese drei Header selbst (Fallback ohne .htaccess): Duplikate vermeiden
     Header onsuccess unset X-Content-Type-Options
     Header always set X-Content-Type-Options "nosniff"

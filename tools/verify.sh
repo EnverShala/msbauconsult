@@ -46,7 +46,7 @@ check static-external external
 headers_static() {
   rc=0
   [ "$(grep -c '^ *Header always set Content-Security-Policy' .htaccess)" -eq 1 ] || { echo "  .htaccess: CSP-Zeile nicht genau einmal"; rc=1; }
-  for s in "default-src 'none'" "frame-src 'none'" "frame-ancestors 'none'"     'Strict-Transport-Security "max-age=31536000; includeSubDomains"' 'X-Content-Type-Options "nosniff"'     'X-Frame-Options "DENY"' 'Referrer-Policy "strict-origin-when-cross-origin"' 'Permissions-Policy'     'Cross-Origin-Opener-Policy "same-origin"' BROTLI_COMPRESS DEFLATE; do
+  for s in "default-src 'none'" "frame-src 'none'" "frame-ancestors 'none'"     'Strict-Transport-Security "max-age=31536000"' 'X-Content-Type-Options "nosniff"'     'X-Frame-Options "DENY"' 'Referrer-Policy "strict-origin-when-cross-origin"' 'Permissions-Policy'     'Cross-Origin-Opener-Policy "same-origin"' BROTLI_COMPRESS DEFLATE; do
     grep -qF -- "$s" .htaccess || { echo "  .htaccess: fehlt: $s"; rc=1; }
   done
   # immutable nur fuer die gestempelten CSS/JS, Schriften/Bilder 30 Tage ohne immutable
@@ -54,7 +54,7 @@ headers_static() {
   [ "$(grep -c 'immutable"' .htaccess)" -eq 1 ] || { echo "  .htaccess: immutable nicht genau einmal"; rc=1; }
   grep -qF 'Header set Cache-Control "public, max-age=2592000"' .htaccess || { echo "  .htaccess: 30-Tage-Regel fehlt"; rc=1; }
   [ "$(grep -c 'Header onsuccess unset' .htaccess)" -eq 3 ] || { echo "  .htaccess: Header onsuccess unset != 3"; rc=1; }
-  bad=$(grep -v '^ *#' .htaccess | grep -E 'data:|unsafe-eval|preload|interest-cohort|Cross-Origin-Embedder-Policy|Cross-Origin-Resource-Policy' || true)
+  bad=$(grep -v '^ *#' .htaccess | grep -E 'data:|unsafe-eval|preload|interest-cohort|includeSubDomains|Cross-Origin-Embedder-Policy|Cross-Origin-Resource-Policy' || true)
   [ -z "$bad" ] || { echo "  .htaccess: verbotene Direktive: $bad"; rc=1; }
   return $rc
 }

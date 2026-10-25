@@ -31,7 +31,7 @@ Setzt der Hoster serverseitig eine eigene Content-Security-Policy, gelten beide 
 `.htaccess` sendet die Header mit `Header always set`, also auch bei 301 und 404:
 
 - `Content-Security-Policy`: `default-src 'none'; script-src 'self' https://heizreport.de/js/heizreport_3.js; style-src 'self' 'unsafe-inline'; img-src 'self' https://heiz.report; font-src 'self'; connect-src 'self' https://heizreport.de/web/; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests`
-- `Strict-Transport-Security: max-age=31536000; includeSubDomains` (kein `preload`)
+- `Strict-Transport-Security: max-age=31536000` (ohne `includeSubDomains` und ohne `preload`, damit Subdomains des Hosters ohne TLS nicht gesperrt werden)
 - `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` (Kamera, Mikrofon, Geolocation, Payment, USB aus), `Cross-Origin-Opener-Policy: same-origin`
 
 Die Lockerungen der CSP gelten ausschließlich dem Wärmepumpen-Check und werden erst nach Klick-Einwilligung relevant:
