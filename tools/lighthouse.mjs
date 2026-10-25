@@ -101,5 +101,6 @@ all.push({ batch, date: summary.date, median: med, verdict });
 fs.writeFileSync(bf, JSON.stringify(all, null, 2));
 
 console.log(`median (batch ${batch}, Lighthouse ${version}): ${JSON.stringify(med)}`);
-console.log(`${verdict} lighthouse performance median=${med.performance}`);
+// The PASS/WARN/FAIL line itself is printed by the caller (verify.sh) from the exit code
+console.log(`lighthouse verdict=${verdict} performance median=${med.performance}`);
 process.exit(verdict === 'PASS' ? 0 : verdict === 'WARN' ? 3 : 1);
