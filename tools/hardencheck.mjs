@@ -413,6 +413,131 @@ groups.clip = async function clip() {
   }
 };
 
+// ---- keyboard-only walkthrough (page.keyboard only, no clicks) ----
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([type="hidden"]):not([tabindex="-1"]):not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const GOLD700 = 'rgb(133, 101, 15)';
+const describe = (e) => (e ? `${e.tagName.toLowerCase()}${e.id ? '#' + e.id : ''}${e.getAttribute && e.getAttribute('href') ? '[' + e.getAttribute('href') + ']' : ''}` : 'null');
+
+// Press Tab until the active element matches selector (cap 120)
+async function tabTo(page, selector) {
+  for (let i = 0; i < 120; i++) {
+    await page.keyboard.press('Tab');
+    if (await page.evaluate((s) => document.activeElement?.matches(s), selector)) return true;
+  }
+  return false;
+}
+const active = (page) => page.evaluate((d) => {
+  const e = document.activeElement;
+  return e ? `${e.tagName.toLowerCase()}${e.id ? '#' + e.id : ''}${e.getAttribute('href') ? '[' + e.getAttribute('href') + ']' : ''}` : 'null';
+}, null);
+
+groups.keyboard = async function keyboard() {
+  const server = await startServer(root, { mockMail: true });
+  const origin = `http://127.0.0.1:${server.port}`;
+  const browser = await chromium.launch({ channel: 'chrome' });
+  try {
+    for (const [w, h] of [[1440, 900], [375, 812]]) {
+      const ctx = await browser.newContext({ viewport: { width: w, height: h } });
+      const page = await ctx.newPage();
+      const L = (n) => `keyboard@${w} ${n}`;
+      await page.goto(origin + '/', { waitUntil: 'load' });
+
+      // 1. skip link
+      await page.keyboard.press('Tab');
+      const skip = await page.evaluate(() => {
+        const e = document.activeElement;
+        const r = e.getBoundingClientRect();
+        return { sel: e.matches('a[href="#main"]'), vis: r.width > 0 && r.height > 0 && r.top >= 0 && r.left >= 0 && r.bottom <= innerHeight && r.right <= innerWidth };
+      });
+      report(skip.sel && skip.vis, L('first Tab = visible skip link'), JSON.stringify(skip));
+      await page.keyboard.press('Enter');
+      const afterSkip = await page.evaluate(() => ({ id: document.activeElement.id, hash: location.hash }));
+      report(afterSkip.id === 'main' && afterSkip.hash === '', L('Enter on skip link focuses main, no hash'), JSON.stringify(afterSkip));
+
+      // 2. tab order = DOM order, honeypot unreachable, visible focus indicator
+      await page.goto(origin + '/', { waitUntil: 'load' });
+      const expected = await page.evaluate((sel) => [...document.querySelectorAll(sel)].filter((e) => {
+        const r = e.getBoundingClientRect();
+        const cs = getComputedStyle(e);
+        return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && !e.closest('[hidden], [aria-hidden="true"]');
+      }).map((e) => `${e.tagName.toLowerCase()}${e.id ? '#' + e.id : ''}${e.getAttribute('href') ? '[' + e.getAttribute('href') + ']' : ''}`), FOCUSABLE);
+      const seen = [];
+      const noRing = [];
+      for (let i = 0; i < Math.min(expected.length, 120); i++) {
+        await page.keyboard.press('Tab');
+        seen.push(await active(page));
+        // outline colour may still be transitioning (transition-all on buttons): poll until settled
+        const ind = await page.waitForFunction((g) => {
+          const cs = getComputedStyle(document.activeElement);
+          return (cs.outlineStyle !== 'none' && cs.outlineColor === g && parseFloat(cs.outlineWidth) >= 2) || cs.boxShadow.includes(g);
+        }, GOLD700, { timeout: 1500 }).then(() => true, () => false);
+        if (!ind) noRing.push(seen[seen.length - 1]);
+      }
+      const mismatch = expected.findIndex((x, i) => x !== seen[i]);
+      report(mismatch < 0 && !seen.includes('input#f-hp_website'), L(`Tab order equals DOM order (${expected.length} stops), honeypot skipped`), mismatch >= 0 ? `first diff at ${mismatch}: expected ${expected[mismatch]} got ${seen[mismatch]}` : '');
+      report(noRing.length === 0, L('every focused element shows a gold-700 outline or ring'), noRing.join(', '));
+
+      // 3. dialogs: focus trap, Esc, focus return
+      for (const [name, opener] of [['impressum', 'footer a[data-dialog="impressum"]'], ['datenschutz', 'footer a[data-dialog="datenschutz"]'], ['datenschutz (form link)', '#contact-form a[data-dialog="datenschutz"]']]) {
+        await page.goto(origin + '/', { waitUntil: 'load' });
+        const found = await tabTo(page, opener);
+        await page.keyboard.press('Enter');
+        const dlgName = name.split(' ')[0];
+        const opened = await page.waitForFunction((n) => document.getElementById('dlg-' + n).open, dlgName, { timeout: 3000 }).then(() => true, () => false);
+        await page.waitForTimeout(450);
+        const startInside = await page.evaluate(() => !!document.activeElement.closest('dialog[open]'));
+        const outside = [];
+        for (let i = 0; i < 14; i++) {
+          await page.keyboard.press('Tab');
+          const st = await page.evaluate(() => { const e = document.activeElement; return { inside: !!e.closest('dialog[open]'), body: e === document.body || e === document.documentElement }; });
+          if (!st.inside && !st.body) outside.push(await active(page));
+        }
+        report(found && opened && startInside && outside.length === 0, L(`dialog ${name}: focus enters dialog and never reaches the page behind`), JSON.stringify({ found, opened, startInside, outside }));
+        await page.keyboard.press('Escape');
+        const closed = await page.waitForFunction(() => !document.querySelector('dialog[open]'), null, { timeout: 3000 }).then(() => true, () => false);
+        const back = await page.evaluate((s) => document.activeElement?.matches(s), opener);
+        report(closed && back, L(`dialog ${name}: Esc closes, focus returns to opener`), JSON.stringify({ closed, back, now: await active(page) }));
+      }
+
+      // 4. menu (below 1024 px)
+      if (w < 1024) {
+        await page.goto(origin + '/', { waitUntil: 'load' });
+        const foundToggle = await tabTo(page, '#menu-toggle');
+        await page.keyboard.press('Enter');
+        const st = await page.evaluate(() => ({ exp: document.getElementById('menu-toggle').getAttribute('aria-expanded'), vis: !document.getElementById('mobile-menu').hidden }));
+        await page.keyboard.press('Tab');
+        const inMenu = await page.evaluate(() => !!document.activeElement.closest('#mobile-menu') && document.activeElement.tagName === 'A');
+        report(foundToggle && st.exp === 'true' && st.vis && inMenu, L('menu: Enter opens, Tab reaches first menu link'), JSON.stringify({ foundToggle, st, inMenu }));
+        await page.keyboard.press('Escape');
+        const esc = await page.evaluate(() => ({ exp: document.getElementById('menu-toggle').getAttribute('aria-expanded'), hid: document.getElementById('mobile-menu').hidden, onToggle: document.activeElement.id }));
+        report(esc.exp === 'false' && esc.hid && esc.onToggle === 'menu-toggle', L('menu: Esc closes, focus on toggle'), JSON.stringify(esc));
+        await page.keyboard.press('Enter');
+        await page.keyboard.press('Tab');
+        const target = await page.evaluate(() => document.activeElement.getAttribute('href').slice(1));
+        await page.keyboard.press('Enter');
+        await page.waitForTimeout(150);
+        const nav = await page.evaluate(() => ({ id: document.activeElement.id, hid: document.getElementById('mobile-menu').hidden, hash: location.hash, y: scrollY }));
+        report(nav.id === target && nav.hid && nav.hash === '' && nav.y > 0, L('menu: Enter on link scrolls, focuses section, closes menu, no hash'), JSON.stringify({ target, ...nav }));
+      }
+      await ctx.close();
+    }
+
+    // 5. reduced motion: anchor activation scrolls instantly
+    const rctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+    const rpage = await rctx.newPage();
+    await rpage.goto(origin + '/', { waitUntil: 'load' });
+    const f = await tabTo(rpage, 'header nav a[href="#contact"]');
+    await rpage.keyboard.press('Enter');
+    await rpage.waitForTimeout(60);
+    const rm = await rpage.evaluate(() => ({ y: scrollY, top: Math.round(document.getElementById('contact').getBoundingClientRect().top) }));
+    report(f && rm.y > 0 && Math.abs(rm.top) < 150, 'keyboard reduced-motion: anchor scroll is immediate', JSON.stringify({ f, ...rm }));
+    await rctx.close();
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+};
+
 const selected = process.argv.slice(2);
 for (const g of selected.length ? selected : Object.keys(groups)) {
   if (!groups[g]) { report(false, `unknown group ${g}`); continue; }

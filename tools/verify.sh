@@ -1,5 +1,9 @@
 #!/bin/sh
 # Ein-Befehl-Phase-4-Gesamtabnahme (vom Projektstamm ausfuehren: sh tools/verify.sh)
+# Prueft: Build, SEC-02/03 statisch, Header/CSP/Storage (hardencheck), SEO/Struktur (structcheck: Title, Description,
+# OG/Twitter, JSON-LD, Ueberschriften, alt, Linktexte, robots/sitemap), Styles, Layout, Netzwerk, Motion, Interaktion,
+# Barrierefreiheit (axe 0 Verstoesse in allen Zustaenden, Zielgroesse 2.5.8, Clipping 320-1440, Tastatur-Durchgang),
+# Groessenbudget, Lighthouse (Median aus 5).
 set -u
 cd "$(dirname "$0")/.."
 
@@ -144,6 +148,10 @@ check interact node tools/interactcheck.mjs
 check headers node tools/hardencheck.mjs headers
 check csp node tools/hardencheck.mjs csp
 check storage node tools/hardencheck.mjs storage
+check axe node tools/hardencheck.mjs axe
+check targets node tools/hardencheck.mjs targets
+check clip node tools/hardencheck.mjs clip
+check keyboard node tools/hardencheck.mjs keyboard
 
 # 10. Capture (Review-Material, kein Pixelvergleich)
 rm -rf "$REVIEW/full"; mkdir -p "$REVIEW/full"
