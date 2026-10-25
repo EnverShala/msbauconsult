@@ -66,6 +66,13 @@ phase3static() {
   done
   grep -q 'hp_website' index.html || { echo "  index.html: hp_website fehlt"; rc=1; }
   [ "$(grep -E '(^|[^_])strlen\(' sendMail.php | grep -vc function_exists)" -eq 0 ] || { echo "  sendMail.php: strlen( ausserhalb des Helpers"; rc=1; }
+  for id in dlg-impressum dlg-datenschutz menu-toggle wp-load wp-consent; do
+    grep -q "id=\"$id\"" index.html || { echo "  index.html: id=$id fehlt"; rc=1; }
+  done
+  ! grep -q '<script src="https://heizreport' index.html || { echo "  index.html: heizreport-Script statisch eingebunden"; rc=1; }
+  # heizreport darf in main.js nur im Loader vorkommen (Klick-Handler von #wp-load)
+  [ "$(grep -c 'heizreport_3.js' assets/js/main.js)" -eq 1 ] || { echo "  main.js: heizreport_3.js nicht genau einmal"; rc=1; }
+  [ "$(grep -n 'heizreport_3.js' assets/js/main.js | cut -d: -f1)" -gt "$(grep -n "wpLoad.addEventListener('click'" assets/js/main.js | cut -d: -f1)" ] || { echo "  main.js: heizreport vor dem Klick-Handler"; rc=1; }
   return $rc
 }
 check static-phase3 phase3static
