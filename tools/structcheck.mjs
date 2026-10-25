@@ -83,6 +83,6 @@ const labelBad = [...services.matchAll(/<a\b[^>]*class="[^"]*btn-secondary[^"]*"
 });
 check('card-labels', labelBad.length === 0 && count(/spotlight-card/g) === 6, `spotlight-card=${count(/spotlight-card/g)} badLabels=${labelBad.length}`);
 const small = ['text-xs', 'text-[8px]', 'text-[10px]', 'text-[11px]', 'text-sm', 'font-mono'];
-const goldBad = [...body.matchAll(/class="([^"]*)"/g)].map((m) => m[1].split(/\s+/)).filter((c) => c.includes('text-gold-600') && small.some((s) => c.includes(s)));
+const goldBad = [...body.matchAll(/class="([^"]*)"/g)].map((m) => m[1].split(/\s+/)).filter((c) => (c.includes('text-gold-600') && small.some((s) => c.includes(s))) || c.some((t) => /^hover:text-gold-(500|600)$/.test(t)));
 check('gold-small-text', goldBad.length === 0, `${goldBad.length} elements`);
 process.exit(fails ? 1 : 0);

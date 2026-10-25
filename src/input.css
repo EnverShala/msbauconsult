@@ -100,7 +100,7 @@
         border-color: #C59B27;
         transform: translateY(-2px);
         box-shadow: 0 15px 30px -5px rgba(212, 175, 55, 0.4);
-        color: #C59B27;
+        color: #85650F; /* gold-700: 4.5:1 */
     }
 
     .btn-secondary {
@@ -118,7 +118,7 @@
     }
     .btn-secondary:hover {
         border-color: rgba(212, 175, 55, 0.5);
-        color: #C59B27;
+        color: #85650F; /* gold-700: 4.5:1 */
         background: #FFFFFF;
     }
 
