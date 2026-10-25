@@ -62,10 +62,8 @@ if [ ! -f "$BIN" ]; then
   mv "$TMP" "$BIN"
 fi
 
+# Im Watch-Modus (--watch/-w) kehrt der Aufruf nicht zurueck, gestempelt wird dann nicht
 ./"$BIN" -i src/input.css -o assets/css/main.css --minify "$@"
-
-# Im Watch-Modus nicht stempeln
-case " $* " in *" --watch "*) exit 0 ;; esac
 
 # Cache-Busting: ?v=<sha256[0:8]> von main.css/main.js in index.html eintragen (idempotent)
 CSS_V=$(hash_of assets/css/main.css | cut -c1-8)
