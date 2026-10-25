@@ -135,6 +135,97 @@
     if (document.readyState === 'complete') cleanUrl();
     else window.addEventListener('load', cleanUrl, { once: true });
 
+    // Mobiles Menue (Disclosure, nicht modal)
+    const menuToggle = document.getElementById('menu-toggle');
+    const menuPanel = document.getElementById('mobile-menu');
+    const closeMenu = ({ focusToggle = false } = {}) => {
+        if (!menuToggle || !menuPanel) return;
+        menuToggle.setAttribute('aria-expanded', 'false');
+        menuPanel.hidden = true;
+        if (focusToggle) menuToggle.focus();
+    };
+    if (menuToggle && menuPanel) {
+        menuToggle.addEventListener('click', () => {
+            const open = menuToggle.getAttribute('aria-expanded') !== 'true';
+            menuToggle.setAttribute('aria-expanded', String(open));
+            menuPanel.hidden = !open;
+        });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && !menuPanel.hidden) closeMenu({ focusToggle: true });
+        });
+        const desktop = window.matchMedia('(min-width: 1024px)');
+        const onDesktop = () => { if (desktop.matches) closeMenu(); };
+        if (desktop.addEventListener) desktop.addEventListener('change', onDesktop);
+        else if (desktop.addListener) desktop.addListener(onDesktop);
+    }
+
+    // Anker ohne Hash in der Adressleiste (Ziel scrollen und fokussieren)
+    document.addEventListener('click', e => {
+        const a = e.target.closest && e.target.closest('a[href^="#"]');
+        if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        const id = decodeURIComponent(a.getAttribute('href').slice(1));
+        const target = id ? document.getElementById(id) : null;
+        if (!target) return;
+        e.preventDefault();
+        closeMenu();
+        target.scrollIntoView();
+        if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
+        target.focus({ preventScroll: true });
+    });
+
+    // Waermepumpen-Check: heizreport erst nach Klick laden (keine Speicherung der Einwilligung)
+    const wpLoad = document.getElementById('wp-load');
+    const wpHost = document.getElementById('wp-check');
+    const wpConsent = document.getElementById('wp-consent');
+    const wpError = document.getElementById('wp-error');
+    if (wpLoad && wpHost && wpConsent && wpError) {
+        let wpBusy = false;
+        wpLoad.addEventListener('click', () => {
+            if (wpBusy) return;
+            wpBusy = true;
+            wpLoad.disabled = true;
+            const box = document.createElement('div');
+            box.id = 'wp_check_script';
+            box.className = 'heizreport';
+            box.dataset.heizreportAnsprache = 'sie';
+            box.dataset.primaryColor = '#85650F';
+            box.dataset.heizreportUser = 'info@ms-bauconsult.de';
+            box.tabIndex = -1;
+            wpHost.appendChild(box);
+            wpConsent.hidden = true;
+            wpError.hidden = true;
+
+            // Das Widget registriert DOMContentLoaded, das beim spaeten Laden nie mehr feuert
+            const original = document.addEventListener;
+            const late = [];
+            document.addEventListener = function (type, fn, opts) {
+                if (type === 'DOMContentLoaded') late.push(fn);
+                else original.call(document, type, fn, opts);
+            };
+            const script = document.createElement('script');
+            script.src = 'https://heizreport.de/js/heizreport_3.js';
+            script.async = true;
+            script.onload = () => {
+                document.addEventListener = original;
+                late.forEach(fn => {
+                    try { fn.call(document, new Event('DOMContentLoaded')); } catch (err) { console.error('[wpcheck]', err); }
+                });
+                box.focus({ preventScroll: true });
+            };
+            script.onerror = () => {
+                document.addEventListener = original;
+                script.remove();
+                wpHost.replaceChildren();
+                wpConsent.hidden = false;
+                wpLoad.disabled = false;
+                wpBusy = false;
+                wpError.textContent = 'Der Wärmepumpen-Check konnte nicht geladen werden. Bitte versuchen Sie es später erneut.';
+                wpError.hidden = false;
+            };
+            document.body.appendChild(script);
+        });
+    }
+
     // Kontaktformular: Validierung wie sendMail.php, Telefonfilter, JSON-Versand
     const form = document.getElementById('contact-form');
     if (form) {

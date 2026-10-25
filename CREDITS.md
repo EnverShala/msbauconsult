@@ -17,6 +17,7 @@
   Einzelne Icons stammen aus dem Feather-Projekt: The MIT License (MIT), Copyright (c) 2013-present Cole Bemis.
   Quelle: https://github.com/lucide-icons/lucide
   SVG-Markup inline in `index.html`, keine Bibliothek eingebunden.
+  Phase 3: Icons `menu` und `x` (mobiles Menü).
   Verwendete Icons (ergänzt in Phase 2): hard-hat, zap, badge-euro, file-badge, route, clipboard-list, phone, mail, map-pin, ruler, handshake, user-check; x (ergänzt in Phase 3).
 
 ## Bilder

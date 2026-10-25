@@ -62,8 +62,8 @@
     <!-- FLOATING NAVIGATION -->
     <header>
     <nav aria-label="Hauptnavigation" class="fixed top-6 left-0 w-full z-50 transition-all duration-300">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="glass-light rounded-full px-8 py-3.5 flex items-center justify-between border border-gold-400/30 shadow-xl">
+        <div class="max-w-7xl mx-auto px-6 max-[379px]:px-3">
+            <div class="glass-light rounded-full px-8 max-[359px]:px-4 py-3.5 flex items-center justify-between border border-gold-400/30 shadow-xl">
                 
                 <!-- Brand Logo -->
                 <a href="#top" class="flex items-center gap-3 group">
@@ -71,7 +71,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 412" class="w-6 h-6" aria-hidden="true"><path fill="#1A1C23" d="M190 0.5 1.5 109 190 218ZM1 121 1 302.5 42 326 42 244.5 53 251 53 332.5 126 375 125.5 293 137 298.5 137 381 190 411.5 190 230 100 178 100 261.5 90 256.5 89.5 172Z"/><path fill="#C59B27" d="M200 0 389.5 109 200 218.5ZM388.5 121 200 230 200 352 301 294 301 306 200 364 200 412 389 303 389 186.5 282.5 247 283 235 389 174Z"/></svg>
                     </div>
                     <div class="flex flex-col">
-                        <span class="font-serif font-bold text-base tracking-widest text-charcoal">MUHAMED SHALA</span>
+                        <span class="font-serif font-bold text-base tracking-widest max-[359px]:tracking-wider text-charcoal whitespace-nowrap">MUHAMED SHALA</span>
                         <span class="text-[8px] uppercase tracking-[0.3em] text-gold-700 font-semibold">Bau- &amp; Energieberatung</span>
                     </div>
                 </a>
@@ -92,6 +92,23 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="lucide lucide-arrow-up-right w-4 h-4 text-gold-600"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
                         </span>
                     </a>
+                </div>
+
+                <!-- Menu Button (mobil) -->
+                <button type="button" id="menu-toggle" aria-expanded="false" aria-controls="mobile-menu" aria-label="Menü" class="group lg:hidden ml-3 max-[359px]:ml-2 w-10 h-10 max-[359px]:w-9 max-[359px]:h-9 shrink-0 rounded-full border border-gold-500/40 bg-gold-100 flex items-center justify-center text-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="lucide lucide-menu w-5 h-5 group-aria-expanded:hidden"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="lucide lucide-x w-5 h-5 hidden group-aria-expanded:block"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            </div>
+
+            <!-- Mobiles Menü -->
+            <div id="mobile-menu" hidden class="lg:hidden mt-3 glass-light rounded-3xl p-4 border border-gold-400/30 shadow-xl">
+                <div class="flex flex-col text-xs font-semibold uppercase tracking-widest text-slate-700 max-h-[calc(100dvh-8rem)] overflow-y-auto">
+                    <a href="#about" class="px-4 py-3 rounded-xl hover:text-gold-700 hover:bg-gold-100/60 transition-colors">Über mich</a>
+                    <a href="#services" class="px-4 py-3 rounded-xl hover:text-gold-700 hover:bg-gold-100/60 transition-colors">Leistungen</a>
+                    <a href="#waermepumpe" class="px-4 py-3 rounded-xl hover:text-gold-700 hover:bg-gold-100/60 transition-colors">Wärmepumpe</a>
+                    <a href="#contact" class="px-4 py-3 rounded-xl hover:text-gold-700 hover:bg-gold-100/60 transition-colors">Kontakt</a>
+                    <a href="#contact" class="btn-primary text-xs tracking-wider uppercase mt-2 sm:hidden">Projekt anfragen</a>
                 </div>
             </div>
         </div>
@@ -332,11 +349,13 @@
                         <p class="text-slate-600 text-sm">Machen Sie den kostenlosen Kurzcheck und erhalten Sie in wenigen Minuten eine erste, unverbindliche Einschätzung, ob sich eine Wärmepumpe für Ihre Immobilie eignet.</p>
                     </div>
 
-                    <div class="glass-light p-6 rounded-2xl border border-gold-400/30 text-center space-y-4 max-w-2xl mx-auto">
+                    <div id="wp-consent" class="glass-light p-6 rounded-2xl border border-gold-400/30 text-center space-y-4 max-w-2xl mx-auto">
                         <p class="text-sm text-slate-700 leading-relaxed">Mit dem Laden des Wärmepumpen-Checks stimmen Sie zu, dass Daten – insbesondere Ihre IP-Adresse – an heizreport.de übertragen werden. Näheres dazu in unserer <a href="/datenschutz" data-dialog="datenschutz" class="underline underline-offset-2 text-gold-700 hover:text-charcoal">Datenschutzerklärung</a>.</p>
                         <button type="button" id="wp-load" class="btn-primary text-sm">Wärmepumpen-Check laden</button>
                         <p class="text-xs text-slate-600">Ihre Einwilligung gilt nur für diesen Seitenaufruf und wird nicht gespeichert.</p>
                     </div>
+
+                    <p id="wp-error" hidden role="alert" class="text-sm text-red-700 text-center"></p>
 
                     <div id="wp-check"></div>
 

@@ -177,3 +177,9 @@ body:has(dialog[open]){overflow:hidden}
 #contact-form [aria-invalid="true"]{border-color:#B91C1C}
 #contact-form button[disabled]{opacity:.7;cursor:progress}
 #contact-form button[disabled]:hover{transform:none}
+
+/* Wärmepumpen-Check (heizreport-Widget im hellen Design) */
+#wp_check_script{color:#1A1C23}
+#wp_check_script .video-container img{border-color:#85650F!important}
+#wp_check_script .result-box button{margin-top:auto!important}
+#wp_check_script:focus{outline:none}
