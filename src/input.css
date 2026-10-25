@@ -142,9 +142,28 @@
 /* Spotlight-Karten (ersetzt das frühere Inline-Style, CSP) */
 .spotlight-card:hover{background:radial-gradient(600px circle at var(--x,50%) var(--y,50%),rgba(212,175,55,.12),rgba(255,255,255,.95) 40%)}
 
+/* Rechtsdialoge: Slide-in von rechts (native dialog, CSP-kompatibel) */
+.legal-dialog{margin:0 0 0 auto;padding:0;border:0;height:100dvh;max-height:none;width:min(42rem,100vw);max-width:100vw;
+  background:#fff;color:#1A1C23;overflow:hidden;box-shadow:-20px 0 40px -15px rgba(26,28,35,.25);
+  transform:translateX(100%);
+  transition:transform .4s ease-out,overlay .4s allow-discrete,display .4s allow-discrete}
+.legal-dialog[open]{transform:none}
+@starting-style{.legal-dialog[open]{transform:translateX(100%)}}
+.legal-dialog::backdrop{background:rgb(26 28 35 / 0);
+  transition:background-color .4s,overlay .4s allow-discrete,display .4s allow-discrete}
+.legal-dialog[open]::backdrop{background:rgb(26 28 35 / .45)}
+@starting-style{.legal-dialog[open]::backdrop{background:rgb(26 28 35 / 0)}}
+.legal-dialog__panel{height:100%;overflow-y:auto;overscroll-behavior:contain}
+/* Scroll-Lock ohne JS und ohne Layout-Sprung */
+html:has(dialog[open]){scrollbar-gutter:stable}
+body:has(dialog[open]){overflow:hidden}
+/* Programmatische Fokusziele (Sektionen, main) ohne Ring */
+[tabindex="-1"]:focus{outline:none}
+
 @tailwind utilities;
 
 @media (prefers-reduced-motion: reduce){
+  .legal-dialog,.legal-dialog::backdrop{transition:none}
   .shimmer-text-light{animation:none;background-position:50% 0}
   .border-beam-container::before{animation:none}
   .btn-primary:hover{transform:none}
