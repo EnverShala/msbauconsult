@@ -14,9 +14,12 @@ function getClientIp(bool $behindProxy): string {
             $ip = trim($_SERVER['HTTP_CF_CONNECTING_IP']);
             if (filter_var($ip, FILTER_VALIDATE_IP)) return $ip;
         }
-        // Standard reverse-proxy header — take only the leftmost (client) IP
+        // Standard reverse-proxy header — take the RIGHTMOST entry. A trusted proxy appends the
+        // address it saw to the end of the list, while everything to the left can be pre-seeded
+        // by the client and is therefore spoofable. This assumes exactly one trusted proxy hop.
         if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $ip = trim(explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0]);
+            $parts = array_map('trim', explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']));
+            $ip = end($parts);
             if (filter_var($ip, FILTER_VALIDATE_IP)) return $ip;
         }
     }
@@ -55,8 +58,47 @@ function checkRateLimit(string $file, int $limit, int $window): bool {
     return true;
 }
 
-$ip        = getClientIp($behindProxy);
-$cacheFile = sys_get_temp_dir() . '/rl_' . md5($ip) . '.json';
+// Secret per-installation salt for hashing IPs (a plain hash of an IPv4 address is trivially reversible).
+// Generated once with random_bytes and kept in a file (0600) in the temp dir. If that is not possible,
+// fall back to a salt derived from this installation so the limiter keeps working.
+function getRateLimitSalt(): string {
+    $path = sys_get_temp_dir() . '/rl_salt.key';
+    $isSalt = function ($s): bool { return is_string($s) && preg_match('/^[0-9a-f]{64}$/', $s) === 1; };
+
+    $salt = @file_get_contents($path);
+    if ($isSalt($salt)) return $salt;
+
+    try {
+        $salt = bin2hex(random_bytes(32));
+    } catch (Throwable $e) {
+        return hash('sha256', __FILE__ . '|' . php_uname() . '|' . PHP_VERSION);
+    }
+
+    $fh = @fopen($path, 'x'); // exclusive create: only one concurrent request writes the salt
+    if ($fh !== false) {
+        @chmod($path, 0600);
+        fwrite($fh, $salt);
+        fclose($fh);
+        return $salt;
+    }
+
+    // Another request created it first (or the dir is not writable)
+    $existing = @file_get_contents($path);
+    if ($isSalt($existing)) return $existing;
+    return hash('sha256', __FILE__ . '|' . php_uname() . '|' . PHP_VERSION);
+}
+
+// Opportunistically delete expired rate-limit files. A file whose mtime is older than the window
+// can no longer block anyone. Cheap: at most 200 files are looked at per request.
+function sweepRateLimitFiles(int $window): void {
+    $files = glob(sys_get_temp_dir() . '/rl_*.json', GLOB_NOSORT);
+    if (!is_array($files)) return;
+    $threshold = time() - $window;
+    foreach (array_slice($files, 0, 200) as $f) {
+        $mtime = @filemtime($f);
+        if ($mtime !== false && $mtime < $threshold) @unlink($f);
+    }
+}
 
 // --- Security headers ---
 header('X-Content-Type-Options: nosniff');
@@ -71,7 +113,10 @@ if (in_array($origin, $allowedOrigins, true)) {
     header('Vary: Origin');
 }
 
-switch ($_SERVER['REQUEST_METHOD']) {
+// All responses of this endpoint are JSON (also 405)
+header('Content-Type: application/json; charset=utf-8');
+
+switch ($_SERVER['REQUEST_METHOD'] ?? '') {
     case 'OPTIONS':
         header('Access-Control-Allow-Methods: POST');
         header('Access-Control-Allow-Headers: Content-Type');
@@ -79,18 +124,13 @@ switch ($_SERVER['REQUEST_METHOD']) {
         exit;
 
     case 'POST':
-        header('Content-Type: application/json; charset=utf-8');
+        // Remove expired rate-limit files (the rate limit itself is checked just before mail())
+        sweepRateLimitFiles($rateWindow);
 
-        // Rate limit check
-        if (!checkRateLimit($cacheFile, $rateLimit, $rateWindow)) {
-            http_response_code(429);
-            echo json_encode(['error' => 'Zu viele Anfragen. Bitte versuchen Sie es in einigen Minuten erneut.']);
-            exit;
-        }
-
-        // Validate Content-Type
-        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
-        if (strpos($contentType, 'application/json') === false) {
+        // Validate Content-Type: exact media type (parameters like charset are ignored).
+        // A substring match would let a CORS-safelisted "text/plain;application/json" through.
+        $contentType = strtolower(trim(explode(';', $_SERVER['CONTENT_TYPE'] ?? '')[0]));
+        if ($contentType !== 'application/json') {
             http_response_code(400);
             echo json_encode(['error' => 'Ungültige Anfrage.']);
             exit;
@@ -109,8 +149,11 @@ switch ($_SERVER['REQUEST_METHOD']) {
         // Honeypot: bots fill hidden fields, humans don't
         // Time trap: forms submitted faster than 3 s after page load are bots
         // Return fake success so attackers learn nothing about the mechanism
-        $elapsed = $params['t'] ?? null;
-        if (!empty($params['hp_website']) || !is_numeric($elapsed) || $elapsed < 3000) {
+        // Any non-empty string counts as filled (also "0"); non-string values are never sent by the form
+        $hp       = $params['hp_website'] ?? '';
+        $hpFilled = is_string($hp) ? trim($hp) !== '' : true;
+        $elapsed  = $params['t'] ?? null;
+        if ($hpFilled || !is_numeric($elapsed) || $elapsed < 3000) {
             http_response_code(200);
             echo json_encode(['success' => true]);
             exit;
@@ -145,10 +188,10 @@ switch ($_SERVER['REQUEST_METHOD']) {
             echo json_encode(['error' => 'Bitte geben Sie eine gültige E-Mail-Adresse an.']);
             exit;
         }
-        // Name: letters plus space, hyphen, apostrophe, dot (e.g. "Dr. Müller-O'Brien"), at least 2 letters
-        if (!preg_match('/^(?=(?:.*\p{L}){2})[\p{L}\p{M} .\'\-]+$/u', $name)) {
+        // Name: letters plus space, hyphen, apostrophe (also typographic ’), dot (e.g. "Dr. Müller-O'Brien"), at least 2 letters
+        if (!preg_match('/^(?=(?:.*\p{L}){2})[\p{L}\p{M} .\'’\-]+$/u', $name)) {
             http_response_code(400);
-            echo json_encode(['error' => 'Bitte geben Sie Ihren Namen an (mindestens 2 Buchstaben).']);
+            echo json_encode(['error' => 'Bitte geben Sie Ihren Namen an (mindestens 2 Buchstaben; erlaubt sind Buchstaben, Leerzeichen, Punkt, Bindestrich und Apostroph).']);
             exit;
         }
         // Phone: no letters; digits with optional + ( ) / - and spaces, at least 6 digits
@@ -176,10 +219,22 @@ switch ($_SERVER['REQUEST_METHOD']) {
         $email = str_replace(["\r", "\n", "\0"], '', $email);
         $phone = str_replace(["\r", "\n", "\0"], '', $phone);
 
+        // Rate limit: only submissions that passed validation and the bot checks and would
+        // actually send a mail count (a visitor correcting typos is never locked out)
+        $cacheFile = sys_get_temp_dir() . '/rl_' . hash_hmac('sha256', getClientIp($behindProxy), getRateLimitSalt()) . '.json';
+        if (!checkRateLimit($cacheFile, $rateLimit, $rateWindow)) {
+            http_response_code(429);
+            echo json_encode(['error' => 'Zu viele Anfragen. Bitte versuchen Sie es in einigen Minuten erneut.']);
+            exit;
+        }
+
         // Build plain-text email body (no HTML, so no XSS risk in mail client)
-        // Subject is MIME-encoded so umlauts in names survive (e.g. "Müller")
-        $recipient = 'info@ms-bauconsult.de';
-        $subject   = '=?UTF-8?B?' . base64_encode('Nachricht von ' . $name) . '?=';
+        // Subject is MIME-encoded (RFC 2047, folded) so umlauts in names survive (e.g. "Müller")
+        $recipient   = 'info@ms-bauconsult.de';
+        $subjectText = 'Nachricht von ' . $name;
+        $subject     = function_exists('mb_encode_mimeheader')
+            ? mb_encode_mimeheader($subjectText, 'UTF-8', 'B', "\r\n")
+            : '=?UTF-8?B?' . base64_encode($subjectText) . '?=';
         $body      = "Name:     " . $name . "\r\n"
                    . "E-Mail:   " . $email . "\r\n"
                    . "Telefon:  " . ($phone !== '' ? $phone : '-') . "\r\n\r\n"
@@ -189,6 +244,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
         $headers   = [];
         $headers[] = 'MIME-Version: 1.0';
         $headers[] = 'Content-Type: text/plain; charset=utf-8';
+        $headers[] = 'Content-Transfer-Encoding: 8bit';
         $headers[] = 'From: no-reply@ms-bauconsult.de';
         $headers[] = 'Reply-To: ' . $email;
 
