@@ -50,7 +50,7 @@ Die Baseline der berechneten Stile liegt in `.planning/phases/02-inhalte-neue-se
 
 Hinweis: Tailwind scannt nur `index.html`. Klassen, die später per JavaScript gesetzt werden (Phase 3), erfordern eine Erweiterung von `content` in `tailwind.config.js`.
 
-Reproduzierbare Asset-Rezepte: `sh tools/build-fonts.sh` (Schrift-Subsets) und `python -I tools/build-images.py` (Bilder).
+Reproduzierbare Asset-Rezepte: `sh tools/build-fonts.sh` (Schrift-Subsets; google/fonts auf Commit `e7db6ca` gepinnt, TTFs per SHA-256 geprueft) und `python -I tools/build-images.py` (Bilder).
 
 ## Hero-Foto (optional)
 
