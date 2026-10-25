@@ -119,6 +119,13 @@ const groups = {
     for (const [k, v] of Object.entries(MAIL_RULES.MAX)) {
       report(new RegExp(`\\$len\\(\\$${k}\\) > ${v}\\b`).test(php), `parity limit ${k}=${v}`);
     }
+    const js = fs.readFileSync(path.join(root, 'assets/js/main.js'), 'utf8');
+    const lit = (n) => { const m = js.match(new RegExp('const ' + n + ' = /(.*)/([a-z]*);')); return m ? new RegExp(m[1], m[2]) : null; };
+    for (const n of ['NAME_RE', 'EMAIL_RE', 'PHONE_RE']) {
+      const r = lit(n);
+      report(!!r && r.source === MAIL_RULES[n].source && r.flags === MAIL_RULES[n].flags, 'parity js ' + n, String(r));
+    }
+    report(/const PHONE_MIN_DIGITS = 6;/.test(js) && MAIL_RULES.PHONE_MIN_DIGITS === 6, 'parity js PHONE_MIN_DIGITS');
   },
 
   async paths() {
@@ -288,6 +295,141 @@ const groups = {
     const href = await page.evaluate(() => document.querySelector('#dlg-datenschutz a[href^="https://"]')?.getAttribute('href'));
     const rel = await page.evaluate(() => document.querySelector('#dlg-datenschutz a[href^="https://"]')?.getAttribute('rel'));
     report(href === 'https://heizreport.de/datenschutz' && rel === 'noopener noreferrer', 'legal heizreport link with rel', `${href} ${rel}`);
+    await ctx.close();
+  },
+  async form() {
+    const ctx = await newContext();
+    const page = await ctx.newPage();
+    const posts = [];
+    page.on('request', (r) => { if (r.method() === 'POST' && r.url().endsWith('/sendMail.php')) posts.push(r); });
+    await page.goto(origin + '/');
+    server.resetMail();
+    const txt = (sel) => page.evaluate((s) => document.querySelector(s)?.textContent ?? null, sel);
+    const vis = (sel) => page.evaluate((s) => { const e = document.querySelector(s); return !!e && !e.hidden && e.getClientRects().length > 0; }, sel);
+    const inv = (id) => page.getAttribute('#' + id, 'aria-invalid');
+    const fillAll = async (o = {}) => {
+      const v = { name: 'Jo Müller', email: 'jo@example.de', phone: '+49 711 123456', message: 'Hallo', ...o };
+      for (const k of Object.keys(v)) await page.fill('#f-' + k, v[k]);
+    };
+    const submit = () => page.click('#contact-form button[type="submit"]');
+    const statusStarts = (s) => page.waitForFunction((x) => document.getElementById('form-status').textContent.startsWith(x), s, { timeout: 8000 }).catch(() => {});
+
+    // Empty submit
+    await submit();
+    report(posts.length === 0, 'form empty submit sends no request');
+    for (const k of ['name', 'email', 'message']) {
+      report((await inv('f-' + k)) === 'true' && (await vis('#f-' + k + '-err')) && (await txt('#f-' + k + '-err')).length > 5, `form empty ${k} invalid with message`);
+    }
+    report((await txt('#form-status')) === 'Bitte prüfen Sie Ihre Eingaben.', 'form empty status text');
+    report((await page.evaluate(() => document.activeElement.id)) === 'f-name', 'form empty focuses first invalid field');
+
+    // Name cases
+    for (const n of ['A', ' ', '12']) {
+      await fillAll({ name: n });
+      await submit();
+      report(posts.length === 0 && (await inv('f-name')) === 'true' && (await txt('#f-name-err')) === 'Bitte geben Sie Ihren Namen an (mindestens 2 Buchstaben).', `form name "${n}" rejected`);
+    }
+    await fillAll({ name: 'Jo', phone: '' });
+    await page.evaluate(() => document.getElementById('f-name').blur());
+    report((await inv('f-name')) === 'false' && !(await vis('#f-name-err')), 'form name "Jo" accepted');
+
+    // E-mail cases
+    for (const m of ['a@b', 'a@b.c']) {
+      await fillAll({ email: m });
+      await submit();
+      report(posts.length === 0 && (await txt('#f-email-err')) === 'Bitte geben Sie eine gültige E-Mail-Adresse an.', `form email "${m}" rejected`);
+    }
+
+    // Phone filter
+    await page.fill('#f-phone', '');
+    await page.focus('#f-phone');
+    await page.keyboard.type('abc');
+    report((await page.inputValue('#f-phone')) === '', 'form phone "abc" typed vanishes');
+    await page.keyboard.type('0711 12a34b56');
+    report((await page.inputValue('#f-phone')) === '0711 123456', 'form phone letters filtered while typing', await page.inputValue('#f-phone'));
+    await page.fill('#f-phone', '0711 1234');
+    await page.evaluate(() => document.getElementById('f-phone').setSelectionRange(4, 4));
+    await page.keyboard.type('x');
+    const caret = await page.evaluate(() => [document.getElementById('f-phone').value, document.getElementById('f-phone').selectionStart]);
+    report(caret[0] === '0711 1234' && caret[1] === 4, 'form phone caret kept', JSON.stringify(caret));
+    await page.fill('#f-phone', '+49 abc 711');
+    report((await page.inputValue('#f-phone')) === '+49  711', 'form phone pasted letters removed', await page.inputValue('#f-phone'));
+    await fillAll({ phone: '12345' });
+    await submit();
+    report(posts.length === 0 && (await txt('#f-phone-err')) === 'Bitte geben Sie eine gültige Telefonnummer an (nur Ziffern).', 'form phone "12345" rejected');
+
+    // Valid submit
+    server.resetMail();
+    await fillAll();
+    await submit();
+    await page.waitForFunction(() => document.getElementById('contact-form').getAttribute('aria-busy') === 'true');
+    const busy = await page.evaluate(() => { const b = document.querySelector('#contact-form button[type="submit"]'); return [b.disabled, b.textContent]; });
+    report(busy[0] === true && busy[1] === 'Wird gesendet…', 'form busy state', JSON.stringify(busy));
+    await page.waitForSelector('#form-status[data-state="success"]');
+    report(posts.length === 1, 'form valid submit sends one request', String(posts.length));
+    const sent = JSON.parse(posts[0].postData());
+    report(Object.keys(sent).sort().join() === 'email,hp_website,message,name,phone,t', 'form body keys', Object.keys(sent).join());
+    report(sent.hp_website === '' && sent.t >= 3000, 'form honeypot empty and t >= 3000', `t=${sent.t}`);
+    report((await txt('#form-status')).startsWith('Vielen Dank!'), 'form success text');
+    const after = await page.evaluate(() => ['name', 'email', 'phone', 'message'].map((k) => document.getElementById('f-' + k).value).join(''));
+    report(after === '', 'form reset after success');
+    report(server.mails.length === 1 && server.mails[0].phone === '+49 711 123456', 'form mail with phone received', JSON.stringify(server.mails));
+    const btn = await page.evaluate(() => { const b = document.querySelector('#contact-form button[type="submit"]'); return [b.disabled, b.textContent]; });
+    report(btn[0] === false && btn[1] === 'Nachricht senden', 'form button restored');
+
+    // Honeypot
+    await fillAll();
+    await page.evaluate(() => { document.getElementById('f-hp_website').value = 'http://spam.example'; document.getElementById('form-status').textContent = ''; });
+    const mailsBefore = server.mails.length;
+    await submit();
+    await statusStarts('Vielen Dank');
+    report(server.mails.length === mailsBefore && (await txt('#form-status')).startsWith('Vielen Dank'), 'form honeypot fake success without mail');
+    const hp = await page.evaluate(() => { const w = document.getElementById('f-hp_website').parentElement; const r = w.getBoundingClientRect(); return [r.right <= 0, w.getAttribute('aria-hidden')]; });
+    report(hp[0] === true && hp[1] === 'true', 'form honeypot off-screen and aria-hidden', JSON.stringify(hp));
+
+    // Rate limit
+    server.resetMail();
+    for (let i = 0; i < 3; i++) {
+      await fillAll();
+      await page.evaluate(() => { document.getElementById('form-status').textContent = ''; });
+      await submit();
+      await statusStarts('Vielen Dank');
+    }
+    await fillAll();
+    await page.evaluate(() => { document.getElementById('form-status').textContent = ''; });
+    await submit();
+    await statusStarts('Zu viele');
+    report((await txt('#form-status')) === 'Zu viele Anfragen – bitte in einigen Minuten erneut versuchen.' && (await page.getAttribute('#form-status', 'data-state')) === 'error', '429 message', await txt('#form-status'));
+    await page.waitForFunction(() => !document.querySelector('#contact-form button[type="submit"]').disabled);
+
+    // 400 text safety
+    await page.route('**/sendMail.php', (r) => r.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: '<b>x</b>' }) }));
+    await fillAll();
+    await submit();
+    await statusStarts('<b>x');
+    report((await txt('#form-status')) === '<b>x</b>' && !(await page.$('#form-status b')), '400 server text rendered as plain text');
+    await page.unroute('**/sendMail.php');
+
+    // 500 and network error
+    for (const [label, handler] of [['500', (r) => r.fulfill({ status: 500, body: 'x' })], ['network', (r) => r.abort()]]) {
+      await page.route('**/sendMail.php', handler);
+      await fillAll();
+      await page.evaluate(() => { document.getElementById('form-status').textContent = ''; });
+      await submit();
+      await statusStarts('Senden fehlgeschlagen');
+      const t = (await txt('#form-status')) || '';
+      report(t.includes('+49 172 232 14 82') && t.includes('info@ms-bauconsult.de'), `${label} error points to phone and e-mail`);
+      await page.waitForFunction(() => !document.querySelector('#contact-form button[type="submit"]').disabled);
+      report(await page.isEnabled('#contact-form button[type="submit"]'), `${label} button usable again`);
+      await page.unroute('**/sendMail.php');
+    }
+
+    // FORM-07 regression
+    await page.click('#contact-form a[data-dialog="datenschutz"]');
+    report(await page.evaluate(() => document.getElementById('dlg-datenschutz').open), 'form privacy link opens dialog');
+
+    const st = await page.evaluate(() => [localStorage.length, sessionStorage.length, document.cookie]);
+    report(st[0] === 0 && st[1] === 0 && st[2] === '', 'form no storage and no cookies', JSON.stringify(st));
     await ctx.close();
   },
 };
