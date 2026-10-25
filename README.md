@@ -26,6 +26,8 @@ sh tools/dist.sh
 
 Testversion auf einer anderen (Sub-)Domain, z. B. `msbauconsult.enver-shala.de`: `STAGING_HOST=msbauconsult.enver-shala.de sh tools/dist.sh` erzeugt `dist-staging/` mit Weiterleitung auf diese Domain, ohne HSTS, mit `X-Robots-Tag: noindex` und sperrender `robots.txt`. Die Seite muss im Hauptverzeichnis der (Sub-)Domain liegen, nicht in einem Unterordner (Pfade beginnen mit `/`). Achtung: Das Kontaktformular sendet auch dort echte Mails an `info@ms-bauconsult.de`.
 
+Testversion in einem Unterordner einer anderen Domain, z. B. `enver-shala.de/msbauconsult`: `node tools/dist-subdir.mjs msbauconsult` (Ordnername ohne führenden Schrägstrich) erzeugt `dist-staging/` mit auf den Unterordner umgeschriebenen Pfaden, ohne Weiterleitung auf ms-bauconsult.de, ohne HSTS und mit noindex. Den Inhalt nach `/msbauconsult/` hochladen.
+
 Setzt der Hoster serverseitig eine eigene Content-Security-Policy, gelten beide Header als Schnittmenge. Es darf nur die CSP aus `.htaccess` aktiv sein; die Prüfung steht in [LAUNCH-CHECKLIST.md](LAUNCH-CHECKLIST.md).
 
 ## Sicherheit
