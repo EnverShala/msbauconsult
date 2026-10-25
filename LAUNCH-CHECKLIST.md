@@ -12,7 +12,12 @@ Offene Prüfungen vor dem Go-live. Alles hier ist lokal nicht prüfbar (kein PHP
 - [ ] `curl -sIL https://www.ms-bauconsult.de/impressum`, `/impressum/` und `/datenschutz` liefern 200 mit der Startseite (Rewrite, kein Redirect auf eine andere URL)
 - [ ] Entwicklungspfad `curl -sI https://www.ms-bauconsult.de/tools/` liefert 404 (ebenso `/src/`, `/.planning/`, `/tailwind.config.js`)
 - [ ] Redirect-Schleife hinter einem Proxy oder Load Balancer: Variante mit `X-Forwarded-Proto` in der `.htaccess` verwenden, falls `%{HTTPS}` serverseitig nie `on` ist
-- [ ] Hoster erlaubt `Options -Indexes` und `ErrorDocument` in `.htaccess` (sonst Serverfehler 500: betroffene Zeilen entfernen und mit dem Hoster klären)
+- [ ] Hoster erlaubt in `.htaccess` mindestens `AllowOverride FileInfo Options Indexes AuthConfig`. Symptom bei fehlender Klasse: **jede** Anfrage liefert 500 („… not allowed here“ im Error-Log); `<IfModule>` schützt nicht davor. Benötigt werden:
+  - `Options` für `Options -Indexes`
+  - `Indexes` für `DirectoryIndex`
+  - `AuthConfig` für `Require all denied` im `<FilesMatch "^\.">`-Block (fehlt es: diesen Block entfernen; Dotfiles sperrt dann weiter die `RewriteRule` (2), `.git`/`.planning`/`.claude` zusätzlich `RedirectMatch 404`; danach `curl -sI https://www.ms-bauconsult.de/.htaccess` muss 403 oder 404 liefern)
+  - `FileInfo` für `ErrorDocument`, `RedirectMatch`, `RewriteEngine`/`RewriteRule`, `Header`, `AddType`, `AddCharset`, `AddOutputFilterByType`
+  - für `mod_rewrite` zusätzlich `Options FollowSymLinks` oder `SymLinksIfOwnerMatch` (sonst 403 auf umgeschriebene URLs)
 - [ ] Nur Webdateien hochgeladen (siehe README, „Bekannte Einschränkungen“)
 
 ## Kontaktformular
@@ -55,7 +60,7 @@ Offene Prüfungen vor dem Go-live. Alles hier ist lokal nicht prüfbar (kein PHP
 - [ ] PageSpeed Insights (mobil) für `https://www.ms-bauconsult.de/`: Ziel 4×100; Screenshot oder JSON für README und PORTFOLIO. Lokal lag der Performance-Median bei 99 (siehe README, Kennzahlen): den Performance-Wert live ausdrücklich bestätigen und README/PORTFOLIO nur mit dem live gemessenen Wert aktualisieren
 - [ ] Optional: securityheaders.com und Mozilla Observatory als Nachweis
 - [ ] DNS: `www` und Apex zeigen auf den Webspace; das Zertifikat deckt beide ab
-- [ ] Hoster erlaubt den FileInfo-Override (`Header`, `AddType` in `.htaccess`); sonst die betroffenen Blöcke entfernen und mit dem Hoster klären
+- [ ] Override-Rechte für `Header`, `AddType`, `AddOutputFilterByType` (FileInfo) bestätigt, siehe „Server & .htaccess“
 - [ ] Hochgeladen wurde nur der Inhalt von `dist/` (`sh tools/dist.sh`, baut vorher selbst)
 
 ## Rechtstexte
