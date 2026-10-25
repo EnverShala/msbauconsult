@@ -419,12 +419,24 @@ const groups = {
 
     // Valid submit
     server.resetMail();
+    // Hold the request in flight (route, then continue to the real mock) so the busy state is read
+    // deterministically while the request is pending, in one atomic evaluate.
+    let release;
+    const gate = new Promise((r) => { release = r; });
+    let held;
+    const inFlight = new Promise((r) => { held = r; });
+    await page.route('**/sendMail.php', async (r) => { held(); await gate; await r.continue(); });
     await fillAll();
     await submit();
-    await page.waitForFunction(() => document.getElementById('contact-form').getAttribute('aria-busy') === 'true');
-    const busy = await page.evaluate(() => { const b = document.querySelector('#contact-form button[type="submit"]'); return [b.disabled, b.textContent]; });
-    report(busy[0] === true && busy[1] === 'Wird gesendet…', 'form busy state', JSON.stringify(busy));
+    await inFlight;
+    const busy = await page.evaluate(() => {
+      const b = document.querySelector('#contact-form button[type="submit"]');
+      return [b.disabled, b.textContent, document.getElementById('contact-form').getAttribute('aria-busy')];
+    });
+    report(busy[0] === true && busy[1] === 'Wird gesendet…' && busy[2] === 'true', 'form busy state', JSON.stringify(busy));
+    release();
     await page.waitForSelector('#form-status[data-state="success"]');
+    await page.unroute('**/sendMail.php');
     report(posts.length === 1, 'form valid submit sends one request', String(posts.length));
     const sent = JSON.parse(posts[0].postData());
     report(Object.keys(sent).sort().join() === 'email,hp_website,message,name,phone,t', 'form body keys', Object.keys(sent).join());
