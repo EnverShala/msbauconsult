@@ -131,13 +131,16 @@ switch ($_SERVER['REQUEST_METHOD']) {
             exit;
         }
 
+        // Count characters, not bytes, to match the client maxlength
+        $len = fn(string $s): int => function_exists('mb_strlen') ? mb_strlen($s, 'UTF-8') : strlen($s);
+
         // Length limits
-        if (strlen($name) > 100) {
+        if ($len($name) > 100) {
             http_response_code(400);
             echo json_encode(['error' => 'Der Name darf höchstens 100 Zeichen lang sein.']);
             exit;
         }
-        if (strlen($email) > 254) {
+        if ($len($email) > 254) {
             http_response_code(400);
             echo json_encode(['error' => 'Bitte geben Sie eine gültige E-Mail-Adresse an.']);
             exit;
@@ -149,12 +152,12 @@ switch ($_SERVER['REQUEST_METHOD']) {
             exit;
         }
         // Phone: no letters; digits with optional + ( ) / - and spaces, at least 6 digits
-        if (strlen($phone) > 30 || ($phone !== '' && (!preg_match('/^\+?[0-9()\/\- ]+$/', $phone) || preg_match_all('/[0-9]/', $phone) < 6))) {
+        if ($len($phone) > 30 || ($phone !== '' && (!preg_match('/^\+?[0-9()\/\- ]+$/', $phone) || preg_match_all('/[0-9]/', $phone) < 6))) {
             http_response_code(400);
             echo json_encode(['error' => 'Bitte geben Sie eine gültige Telefonnummer an.']);
             exit;
         }
-        if (strlen($message) > 5000) {
+        if ($len($message) > 5000) {
             http_response_code(400);
             echo json_encode(['error' => 'Die Nachricht darf höchstens 5000 Zeichen lang sein.']);
             exit;

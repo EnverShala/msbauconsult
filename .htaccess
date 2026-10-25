@@ -1,0 +1,31 @@
+# MS Bauconsult - Apache-Konfiguration (Phase 3: saubere URLs, Weiterleitungen, Schutz der Entwicklungsdateien)
+# Phase 4 ergaenzt CSP/Security-Header, Kompression und Caching.
+
+Options -Indexes
+ErrorDocument 404 /index.html
+
+<IfModule mod_dir.c>
+    DirectoryIndex index.html
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # (1) http und non-www -> https://www in einem 301 (festes Ziel, kein Open Redirect)
+    # Bei TLS-Terminierung vor Apache stattdessen X-Forwarded-Proto auswerten:
+    # RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+    RewriteCond %{HTTPS} !=on [OR]
+    RewriteCond %{HTTP_HOST} !^www\.ms-bauconsult\.de$ [NC]
+    RewriteRule ^ https://www.ms-bauconsult.de%{REQUEST_URI} [R=301,L]
+
+    # (2) Entwicklungsmaterial nicht ausliefern
+    RewriteRule ^(\.(?!well-known/)|tools(/|$)|preview(/|$)|screenshots(/|$)|src(/|$)) - [R=404,L]
+    RewriteRule ^(final\.html|build\.(sh|ps1)|tailwind\.config\.js|tailwindcss(\.exe)?|[^/]+\.md)$ - [R=404,L]
+
+    # (3) /index.html -> / (nur bei echter Anfrage, verhindert Schleife)
+    RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s/index\.html[\s?]
+    RewriteRule ^index\.html$ / [R=301,L]
+
+    # (4) Rechtstexte intern als index.html ausliefern
+    RewriteRule ^(impressum|datenschutz)/?$ /index.html [NC,L]
+</IfModule>
