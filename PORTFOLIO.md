@@ -1,3 +1,14 @@
 # MS Bauconsult – Website-Relaunch
 
-Die Website des Ingenieurbüros MS Bauconsult für Bau- und Energieberatung in Fellbach ist eine One-Page-Seite aus statischem HTML, mit der Tailwind-Standalone-CLI kompiliertem CSS und einem einzelnen Vanilla-JS-Modul ohne Framework und ohne Laufzeit-Bibliothek, dazu selbst gehostete Schriften, Inline-SVG-Icons, AVIF- und WebP-Bilder, ein Kontaktformular per fetch an ein PHP-Skript und Rechtstexte als native Dialoge mit sauberen URLs. Besonders ist der Verzicht auf alles Entbehrliche: Vor einer Nutzerinteraktion gibt es null externe Anfragen, die Seite kommt ohne Cookies und ohne Cookie-Banner aus, und der Wärmepumpen-Check eines Drittanbieters wird erst nach einer bewussten Einwilligung per Klick geladen. Abgesichert ist sie durch eine strenge Content-Security-Policy mit `default-src 'none'` samt weiteren Sicherheits-Headern, durch Spam-Schutz mit Honeypot, Zeitfalle und gehashtem IP-Rate-Limit statt CAPTCHA; für Suchmaschinen liefert sie strukturierte Daten (JSON-LD). Lighthouse (mobil, Version 13.5.0, Median aus 5 Läufen) misst 99 bei Performance und je 100 bei Barrierefreiheit, Best Practices und SEO, bei einem LCP von 1,6 s, einem CLS von 0 und 24,5 KiB gzip für HTML, CSS und JavaScript zusammen. Eine automatisierte Prüfsuite mit Playwright, Lighthouse und axe-core (0 Verstöße gegen WCAG AA) prüft Layout von 320 px an, Tastaturbedienung, Netzwerkverhalten und diese Werte vor jedem Deployment per Skript mit einem Befehl (`sh tools/verify.sh`). Das visuelle Design entstand KI-gestützt, die Umsetzung, die Inhaltsintegration, die Barrierefreiheit, die Sicherheit und die Performance-Optimierung sind meine eigene Arbeit.
+One-Page-Website für ein Ingenieurbüro für Bau- und Energieberatung in Fellbach: statisches HTML, Tailwind-CSS und ein einzelnes Vanilla-JS-Modul, ganz ohne Framework und Laufzeit-Bibliothek. Vor einer Nutzerinteraktion gibt es null externe Anfragen. Die Seite kommt ohne Cookies und Cookie-Banner aus, und der Wärmepumpen-Check eines Drittanbieters lädt erst nach Klick-Einwilligung. Eine strenge Content-Security-Policy, Spam-Schutz ohne CAPTCHA (Honeypot, Zeitfalle, Rate-Limit) und strukturierte Daten für Suchmaschinen runden sie ab. Lighthouse misst mobil 99/100/100/100 (Performance, Barrierefreiheit, Best Practices, SEO), axe-core 0 WCAG-AA-Verstöße – abgesichert durch eine automatisierte Prüfsuite.
+
+## Tech-Stack
+
+- HTML5 (semantisch, native `<dialog>`, JSON-LD)
+- Tailwind CSS v3 (Standalone-CLI, ohne Node-Build)
+- Vanilla JavaScript (Canvas-Animation, Fetch-API)
+- PHP (Kontaktformular-Endpoint)
+- Apache `.htaccess` (CSP, Security-Header, Caching, Kompression, saubere URLs)
+- Selbst gehostete Webfonts (WOFF2) und Inline-SVG-Icons (Lucide)
+- AVIF/WebP-Bilder (Pillow)
+- Playwright, Lighthouse und axe-core (automatisierte Tests)
