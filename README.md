@@ -59,7 +59,7 @@ build.ps1, build.sh   Build (Tailwind-CLI, ?v=-Stempel)
 tailwind.config.js    Tailwind-Konfiguration
 src/input.css         CSS-Quelle (Tailwind-Direktiven, Schriften, eigene Komponenten)
 assets/css/           erzeugtes main.css
-assets/js/            main.js (Spotlight, Partikel, Rechtsdialoge, Navigation, Formular, Wärmepumpen-Check)
+assets/js/            main.js (Spotlight, Hero-Knotennetz, Rechtsdialoge, Navigation, Formular, Wärmepumpen-Check)
 assets/fonts/         selbst gehostete woff2-Schriften
 assets/img/           optimierte Bilder
 dist/                 Deploy-Ausgabe von tools/dist.sh (gitignored)
@@ -89,7 +89,7 @@ sh tools/verify.sh
 
 Das Ergebnis steht in der letzten Zeile: `ALL PASS` (bzw. `ALL PASS (1 WARN)`, wenn nur der Lighthouse-Performance-Median 99 statt 100 beträgt). Ein zusätzliches `WARN build-current` heißt: `index.html` oder `main.css` waren vor dem Lauf nicht frisch gebaut; `verify.sh` baut selbst, die Änderung muss danach eingecheckt werden. Mit `VERIFY_LIGHTHOUSE=0` entfällt der mehrminütige Lighthouse-Teil für schnelle Läufe.
 
-Geprüft werden: Build, kein Inline-Code, keine fremden Domains, `final.html` unverändert, keine Platzhalter, statische Regeln (Pfade, `.htaccess`, Header, Versionsstempel, Honeypot, Dialog-/Menü-/Consent-IDs, heizreport nur im Loader), Struktur/SEO (Title, Description, OG/Twitter, JSON-LD, Überschriften, alt-Texte, Linktexte, robots/sitemap), Design-Stile gegen Baseline, Layout 320–1440 px ohne horizontales Scrollen, Netzwerk (keine fremden Anfragen), Bewegung (`prefers-reduced-motion`, Partikel-Pause im verdeckten Tab), Interaktion, Header und CSP (inklusive Negativtest), Cookies und Web-Storage, axe-core (0 Verstöße in allen Zuständen), Zielgrößen nach WCAG 2.5.8, Clipping, Tastatur-Durchgang, Größenbudget, Deploy-Whitelist (`dist`) und Lighthouse.
+Geprüft werden: Build, kein Inline-Code, keine fremden Domains, `final.html` unverändert, keine Platzhalter, statische Regeln (Pfade, `.htaccess`, Header, Versionsstempel, Honeypot, Dialog-/Menü-/Consent-IDs, heizreport nur im Loader), Struktur/SEO (Title, Description, OG/Twitter, JSON-LD, Überschriften, alt-Texte, Linktexte, robots/sitemap), Design-Stile gegen Baseline, Layout 320–1440 px ohne horizontales Scrollen, Netzwerk (keine fremden Anfragen), Bewegung (`prefers-reduced-motion`, Hero-Animation pausiert im verdeckten Tab), Interaktion, Header und CSP (inklusive Negativtest), Cookies und Web-Storage, axe-core (0 Verstöße in allen Zuständen), Zielgrößen nach WCAG 2.5.8, Clipping, Tastatur-Durchgang, Größenbudget, Deploy-Whitelist (`dist`) und Lighthouse.
 
 Einzelne Gruppen:
 
@@ -141,7 +141,7 @@ Standard ist der Hero ohne Foto. Zum Aktivieren den HTML-Kommentar um den `<pict
 - Ohne JavaScript zeigen `/impressum` und `/datenschutz` die Startseite ohne den Rechtstext, die Dialoge und der Wärmepumpen-Check brauchen JavaScript. Die Pflichtangaben stehen im HTML, werden aber erst im Dialog sichtbar.
 - Das mobile Menü (unter 1024 px) braucht JavaScript; die Abschnittsanker der Seite funktionieren ohne JavaScript weiterhin.
 - Die zwei Reload-Buttons des heizreport-Widgets arbeiten mit Inline-`onclick` und funktionieren unter der strikten CSP nicht (Seite neu laden bleibt möglich).
-- Einzige bewusste Abweichung vom Design in `final.html`: Die Textauswahl (`::selection`) ist anthrazit statt weiß auf Gold, damit der Kontrast WCAG AA erfüllt (8,09:1). Ebenso sind Fokus-Umrisse bei Tastaturbedienung in Gold-700 sichtbar; die Mausoptik bleibt unverändert.
+- Bewusste Abweichungen vom Design in `final.html` (vom Nutzer gewünscht bzw. freigegeben): Die Textauswahl (`::selection`) ist anthrazit statt weiß auf Gold (WCAG AA, 8,09:1); Fokus-Umrisse bei Tastaturbedienung in Gold-700; statt der seitenweiten Partikel ein Knotennetz mit Blueprint-Raster nur im Hero (pausiert außerhalb des Sichtbereichs, statisch bei reduzierter Bewegung); goldener Strich statt „//“ vor den Sektionstiteln; CTA „Beratung anfragen“.
 - Nur `dist/` deployen (siehe Deploy). Entwicklungspfade (`tools/`, `src/`, `.planning/`, `preview/`) sperrt `.htaccess` ohnehin.
 - Offene Live-Prüfungen (PHP-Mailversand, Apache-Regeln, Header, heizreport-Lizenz, Rechtsprüfung, Hoster-Angaben, PageSpeed Insights) stehen in [LAUNCH-CHECKLIST.md](LAUNCH-CHECKLIST.md).
 
