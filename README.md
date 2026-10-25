@@ -102,7 +102,7 @@ node tools/lighthouse.mjs
 
 `serve.mjs --prod` sendet die Header aus `.htaccess` (einzige Quelle), `lighthouse.mjs` misst dagegen. Gruppen von `interactcheck`: `server`, `mock`, `parity`, `paths`, `dialogs`, `deeplinks`, `legal`, `form`, `anchors`, `menu`, `consent`. Der Entwicklungsserver (`tools/serve.mjs`) ersetzt Apache und bildet die Rewrites sowie `sendMail.php` nach (Mail-Mock: `startServer(root, { mockMail: true })`; PHP selbst (z. B. `filter_var`, `mail()`) wird dabei nicht ausgeführt und muss separat getestet werden). Mit `--online` lädt die Gruppe `consent` einmal das echte heizreport-Skript und meldet das Ergebnis nur als `INFO`; `verify.sh` verwendet das Flag nie.
 
-Die Baseline der berechneten Stile liegt in `.planning/phases/02-inhalte-neue-sektionen/baseline/styles.json` und wurde von der Phase-1-Seite aufgenommen. `node tools/stylecheck.mjs index.html --record` darf auf der geänderten Seite **nicht** erneut ausgeführt werden.
+Die Baseline der berechneten Stile (`.planning/phases/02-inhalte-neue-sektionen/baseline/styles.json`) liegt nur lokal in den internen Projektunterlagen; ohne sie überspringt bzw. scheitert `stylecheck` in einem frischen Klon. `node tools/stylecheck.mjs index.html --record` darf auf der geänderten Seite **nicht** erneut ausgeführt werden.
 
 Zustände (Menü, Dialoge, Formular, Wärmepumpen-Check) werden über Attribute (`hidden`, `aria-expanded`, `data-state`) und eigenes CSS in `src/input.css` gesteuert, nicht über per JavaScript gesetzte Tailwind-Klassen.
 
@@ -110,7 +110,7 @@ Reproduzierbare Asset-Rezepte: `sh tools/build-fonts.sh` (Schrift-Subsets; googl
 
 ## Kennzahlen
 
-Gemessen am 2026-10-25 mit Lighthouse 13.5.0 (mobil, simulierte Drosselung, headless Chrome 156) gegen `tools/serve.mjs --prod`; Median aus 5 Läufen, Rohdaten in [`.planning/phases/04-haertung-abnahme/LIGHTHOUSE.json`](.planning/phases/04-haertung-abnahme/LIGHTHOUSE.json):
+Gemessen am 2026-10-25 mit Lighthouse 13.5.0 (mobil, simulierte Drosselung, headless Chrome 156) gegen `tools/serve.mjs --prod`; Median aus 5 Läufen, Rohdaten in [`docs/lighthouse.json`](docs/lighthouse.json):
 
 | Kennzahl | Wert |
 |---|---|
