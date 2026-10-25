@@ -250,6 +250,169 @@ groups.storage = async function storage() {
   }
 };
 
+// ---- Phase 4 plan 03: accessibility groups (dev server, no CSP) ----
+const AXE_PATH = path.join(import.meta.dirname, 'node_modules/axe-core/axe.min.js');
+const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
+
+async function openMenu(page) {
+  await page.click('#menu-toggle');
+  await page.waitForFunction(() => document.getElementById('menu-toggle').getAttribute('aria-expanded') === 'true');
+  await page.waitForTimeout(350);
+}
+async function openDialog(page, name) {
+  const link = page.locator('footer a[data-dialog="' + name + '"]');
+  await link.scrollIntoViewIfNeeded();
+  await link.click();
+  await page.waitForFunction((n) => document.getElementById('dlg-' + n).open, name);
+  // slide-in finished (transform back to identity)
+  await page.waitForFunction((n) => { const t = getComputedStyle(document.getElementById('dlg-' + n)).transform; return t === 'none' || t === 'matrix(1, 0, 0, 1, 0, 0)'; }, name);
+  await page.waitForTimeout(100);
+}
+async function closeDialogs(page) {
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => ![...document.querySelectorAll('dialog')].some((d) => d.open));
+}
+async function submitEmptyForm(page) {
+  const btn = page.locator('#contact-form button[type="submit"]');
+  await btn.scrollIntoViewIfNeeded();
+  await btn.click();
+  await page.waitForFunction(() => document.querySelector('#contact-form [aria-invalid="true"]'));
+  await page.waitForTimeout(350);
+}
+
+groups.axe = async function axe() {
+  const server = await startServer(root, { mockMail: true });
+  const origin = `http://127.0.0.1:${server.port}`;
+  const browser = await chromium.launch({ channel: 'chrome' });
+  try {
+    for (const [w, h] of [[375, 812], [1440, 900]]) {
+      // bypassCSP only here: axe is injected as inline script; the csp group keeps the real header
+      const ctx = await browser.newContext({ viewport: { width: w, height: h }, bypassCSP: true });
+      const page = await ctx.newPage();
+      const fresh = async () => {
+        await page.goto(origin + '/', { waitUntil: 'load' });
+        await page.addScriptTag({ path: AXE_PATH });
+      };
+      const states = [
+        ['page', async () => { await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight)); await page.waitForTimeout(400); await page.evaluate(() => window.scrollTo(0, 0)); await page.waitForTimeout(300); }],
+        ...(w < 1024 ? [['menu open', async () => openMenu(page)]] : []),
+        ['impressum dialog', async () => openDialog(page, 'impressum')],
+        ['datenschutz dialog', async () => openDialog(page, 'datenschutz')],
+        ['form error state', async () => submitEmptyForm(page)],
+      ];
+      for (const [name, enter] of states) {
+        await fresh();
+        await enter();
+        const res = await page.evaluate((tags) => window.axe.run(document, { runOnly: { type: 'tag', values: tags } }), TAGS);
+        const v = res.violations.map((x) => `${x.id}[${x.nodes.map((n) => n.target.join(' ')).slice(0, 3).join('; ')}]`);
+        report(v.length === 0, `axe@${w} ${name}: 0 violations`, v.join(' | '));
+        console.log(`INFO axe@${w} ${name}: incomplete=${res.incomplete.length} passes=${res.passes.length}`);
+      }
+      await ctx.close();
+    }
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+};
+
+const TARGET_SEL = 'a, button, input, textarea, select, summary, [tabindex]:not([tabindex="-1"])';
+groups.targets = async function targets() {
+  const server = await startServer(root, { mockMail: true });
+  const origin = `http://127.0.0.1:${server.port}`;
+  const browser = await chromium.launch({ channel: 'chrome' });
+  try {
+    for (const w of [320, 375, 1024, 1440]) {
+      const page = await browser.newPage({ viewport: { width: w, height: 900 } });
+      const states = [['page', async () => {}]];
+      if (w < 1024) states.push(['menu open', async () => openMenu(page)]);
+      for (const [name, enter] of states) {
+        await page.goto(origin + '/', { waitUntil: 'load' });
+        await enter();
+        const bad = await page.evaluate((sel) => {
+          const vis = (e) => {
+            const r = e.getBoundingClientRect();
+            const cs = getComputedStyle(e);
+            return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && !e.closest('[hidden], dialog:not([open])') && !e.closest('.sr-only') && !e.matches('.sr-only');
+          };
+          const list = [...document.querySelectorAll(sel)].filter(vis);
+          // effective box includes an ::after hit-area helper (inset offsets)
+          const box = (e) => {
+            const r = e.getBoundingClientRect();
+            const a = getComputedStyle(e, '::after');
+            if (a.content !== 'none' && a.position === 'absolute') {
+              const t = parseFloat(a.top), b = parseFloat(a.bottom), l = parseFloat(a.left), rr = parseFloat(a.right);
+              if ([t, b, l, rr].every((n) => !Number.isNaN(n))) return { left: r.left + l, top: r.top + t, right: r.right - rr, bottom: r.bottom - b };
+            }
+            return { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+          };
+          const boxes = list.map((e) => ({ e, b: box(e) }));
+          const out = [];
+          for (const { e, b } of boxes) {
+            if (b.right - b.left >= 23.5 && b.bottom - b.top >= 23.5) continue;
+            const p = e.parentElement;
+            const inSentence = e.tagName === 'A' && getComputedStyle(e).display === 'inline' && p && [...p.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim().length > 0);
+            if (inSentence) continue;
+            const cx = (b.left + b.right) / 2, cy = (b.top + b.bottom) / 2;
+            const clash = boxes.some((o) => {
+              if (o.e === e || o.e.contains(e) || e.contains(o.e)) return false;
+              const nx = Math.max(o.b.left, Math.min(cx, o.b.right)), ny = Math.max(o.b.top, Math.min(cy, o.b.bottom));
+              return Math.hypot(nx - cx, ny - cy) < 12;
+            });
+            if (!clash) continue;
+            out.push(`${e.tagName.toLowerCase()}${e.id ? '#' + e.id : ''} "${(e.textContent || e.getAttribute('aria-label') || '').trim().slice(0, 24)}" ${Math.round(b.right - b.left)}x${Math.round(b.bottom - b.top)}`);
+          }
+          return out;
+        }, TARGET_SEL);
+        report(bad.length === 0, `targets@${w} ${name}: all >= 24x24 or exception`, bad.join(' | '));
+      }
+      await page.close();
+    }
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+};
+
+groups.clip = async function clip() {
+  const server = await startServer(root, { mockMail: true });
+  const origin = `http://127.0.0.1:${server.port}`;
+  const browser = await chromium.launch({ channel: 'chrome' });
+  try {
+    for (const w of [320, 360, 375, 414, 768, 1024, 1280, 1440]) {
+      const page = await browser.newPage({ viewport: { width: w, height: 900 } });
+      const states = [['page', async () => {}]];
+      if (w < 1024) states.push(['menu open', async () => openMenu(page)]);
+      states.push(['datenschutz dialog', async () => openDialog(page, 'datenschutz')]);
+      for (const [name, enter] of states) {
+        await page.goto(origin + '/', { waitUntil: 'load' });
+        await enter();
+        const res = await page.evaluate(() => {
+          const de = document.documentElement;
+          const out = [];
+          for (const e of document.body.querySelectorAll('*')) {
+            if (e.closest('[aria-hidden="true"], [hidden], .sr-only, canvas, svg, script, style, dialog:not([open])')) continue;
+            const hasText = [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
+            const ctl = /^(A|BUTTON|INPUT|TEXTAREA|SELECT|IMG)$/.test(e.tagName);
+            if (!hasText && !ctl) continue;
+            const cs = getComputedStyle(e);
+            if (cs.visibility === 'hidden' || cs.display === 'none') continue;
+            const r = e.getBoundingClientRect();
+            if (r.width === 0 || r.height === 0) continue;
+            if (r.left < -0.5 || r.right > innerWidth + 0.5) out.push(`${e.tagName.toLowerCase()}${e.id ? '#' + e.id : ''} ${Math.round(r.left)}..${Math.round(r.right)}`);
+          }
+          return { sw: de.scrollWidth, cw: de.clientWidth, out: out.slice(0, 5) };
+        });
+        report(res.sw <= res.cw && res.out.length === 0, `clip@${w} ${name}: no horizontal scroll, nothing outside viewport`, `scrollWidth=${res.sw} clientWidth=${res.cw} ${res.out.join(' | ')}`);
+      }
+      await page.close();
+    }
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+};
+
 const selected = process.argv.slice(2);
 for (const g of selected.length ? selected : Object.keys(groups)) {
   if (!groups[g]) { report(false, `unknown group ${g}`); continue; }
