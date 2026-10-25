@@ -387,20 +387,24 @@
                                 <div class="grid sm:grid-cols-2 gap-5">
                                     <div>
                                         <label for="f-name" class="text-xs text-slate-700 font-medium block mb-2">Name <span aria-hidden="true">*</span></label>
-                                        <input id="f-name" name="name" type="text" required maxlength="100" autocomplete="name" placeholder="Ihr Name" class="w-full bg-pearl border border-slate-300 rounded-lg p-3 text-sm text-charcoal placeholder:text-slate-600 focus:border-gold-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500">
+                                        <input id="f-name" name="name" type="text" required maxlength="100" autocomplete="name" placeholder="Ihr Name" class="w-full bg-pearl border border-slate-300 rounded-lg p-3 text-sm text-charcoal placeholder:text-slate-600 focus:border-gold-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500" aria-describedby="f-name-err">
+                                        <p id="f-name-err" class="mt-1 text-xs text-red-700" hidden></p>
                                     </div>
                                     <div>
                                         <label for="f-email" class="text-xs text-slate-700 font-medium block mb-2">E-Mail <span aria-hidden="true">*</span></label>
-                                        <input id="f-email" name="email" type="email" required maxlength="254" autocomplete="email" placeholder="ihre@email.de" class="w-full bg-pearl border border-slate-300 rounded-lg p-3 text-sm text-charcoal placeholder:text-slate-600 focus:border-gold-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500">
+                                        <input id="f-email" name="email" type="email" required maxlength="254" autocomplete="email" placeholder="ihre@email.de" class="w-full bg-pearl border border-slate-300 rounded-lg p-3 text-sm text-charcoal placeholder:text-slate-600 focus:border-gold-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500" aria-describedby="f-email-err">
+                                        <p id="f-email-err" class="mt-1 text-xs text-red-700" hidden></p>
                                     </div>
                                 </div>
                                 <div>
                                     <label for="f-phone" class="text-xs text-slate-700 font-medium block mb-2">Telefon</label>
-                                    <input id="f-phone" name="phone" type="tel" maxlength="30" autocomplete="tel" placeholder="Optional" class="w-full bg-pearl border border-slate-300 rounded-lg p-3 text-sm text-charcoal placeholder:text-slate-600 focus:border-gold-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500">
+                                    <input id="f-phone" name="phone" type="tel" inputmode="tel" maxlength="30" autocomplete="tel" placeholder="Optional" class="w-full bg-pearl border border-slate-300 rounded-lg p-3 text-sm text-charcoal placeholder:text-slate-600 focus:border-gold-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500" aria-describedby="f-phone-err">
+                                    <p id="f-phone-err" class="mt-1 text-xs text-red-700" hidden></p>
                                 </div>
                                 <div>
                                     <label for="f-message" class="text-xs text-slate-700 font-medium block mb-2">Ihre Nachricht <span aria-hidden="true">*</span></label>
-                                    <textarea id="f-message" name="message" rows="5" required maxlength="5000" placeholder="Worum geht es bei Ihrem Projekt?" class="w-full bg-pearl border border-slate-300 rounded-lg p-3 text-sm text-charcoal placeholder:text-slate-600 focus:border-gold-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"></textarea>
+                                    <textarea id="f-message" name="message" rows="5" required maxlength="5000" placeholder="Worum geht es bei Ihrem Projekt?" class="w-full bg-pearl border border-slate-300 rounded-lg p-3 text-sm text-charcoal placeholder:text-slate-600 focus:border-gold-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500" aria-describedby="f-message-err"></textarea>
+                                    <p id="f-message-err" class="mt-1 text-xs text-red-700" hidden></p>
                                 </div>
                                 <div class="absolute -left-[9999px] top-0" aria-hidden="true">
                                     <label for="f-hp_website">Bitte leer lassen</label>

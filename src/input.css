@@ -168,3 +168,12 @@ body:has(dialog[open]){overflow:hidden}
   .border-beam-container::before{animation:none}
   .btn-primary:hover{transform:none}
 }
+
+/* Kontaktformular: Statusmeldung und Feldzustände (data-state, kein JS-generiertes Tailwind) */
+#form-status[data-state]{border-radius:1rem;padding:.875rem 1rem;margin-top:.25rem}
+#form-status[data-state="success"]{background:#FFFDF5;border:1px solid rgba(212,175,55,.6);color:#1A1C23}
+#form-status[data-state="error"]{background:#fff;border:1px solid #B91C1C;color:#7F1D1D}
+#form-status[data-state="busy"]{background:#fff;border:1px solid rgba(26,28,35,.15);color:#3D4251}
+#contact-form [aria-invalid="true"]{border-color:#B91C1C}
+#contact-form button[disabled]{opacity:.7;cursor:progress}
+#contact-form button[disabled]:hover{transform:none}
