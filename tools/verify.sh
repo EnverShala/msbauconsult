@@ -10,7 +10,8 @@ cd "$(dirname "$0")/.."
 FAILS=0
 SKIPPED=0
 WARNS=0
-REVIEW=.planning/phases/03-interaktion/review
+# Review-Material (gitignored): ueberschreibt keine Phase-Artefakte unter .planning/
+REVIEW=tools/out/review
 
 pass() { echo "PASS $1"; }
 fail() { echo "FAIL $1"; FAILS=$((FAILS + 1)); }
