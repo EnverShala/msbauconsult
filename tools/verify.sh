@@ -222,7 +222,8 @@ distcheck() {
 }
 check dist distcheck
 
-# 12. Lighthouse (Median aus 5 Laeufen; Exit 3 = Performance 99 = WARN)
+# 12. Lighthouse (Median aus 5 Laeufen; Exit 3 = Performance 99 = WARN; nur bei reinem Performance-FAIL
+#     bis zu 3 Batches, siehe tools/lighthouse.mjs; laeuft als letzter Schritt allein)
 if [ "${VERIFY_LIGHTHOUSE:-1}" = "0" ]; then
   echo "SKIP lighthouse"; SKIPPED=$((SKIPPED + 1))
 else
