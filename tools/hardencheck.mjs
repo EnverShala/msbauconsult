@@ -512,6 +512,8 @@ groups.keyboard = async function keyboard() {
         await page.goto(origin + '/', { waitUntil: 'load' });
         const foundToggle = await tabTo(page, '#menu-toggle');
         await page.keyboard.press('Enter');
+        const menuOpen = () => page.waitForFunction(() => document.getElementById('menu-toggle').getAttribute('aria-expanded') === 'true' && !document.getElementById('mobile-menu').hidden, null, { timeout: 3000 }).catch(() => {});
+        await menuOpen();
         const st = await page.evaluate(() => ({ exp: document.getElementById('menu-toggle').getAttribute('aria-expanded'), vis: !document.getElementById('mobile-menu').hidden }));
         await page.keyboard.press('Tab');
         const inMenu = await page.evaluate(() => !!document.activeElement.closest('#mobile-menu') && document.activeElement.tagName === 'A');
@@ -520,10 +522,18 @@ groups.keyboard = async function keyboard() {
         const esc = await page.evaluate(() => ({ exp: document.getElementById('menu-toggle').getAttribute('aria-expanded'), hid: document.getElementById('mobile-menu').hidden, onToggle: document.activeElement.id }));
         report(esc.exp === 'false' && esc.hid && esc.onToggle === 'menu-toggle', L('menu: Esc closes, focus on toggle'), JSON.stringify(esc));
         await page.keyboard.press('Enter');
+        await menuOpen();
         await page.keyboard.press('Tab');
         const target = await page.evaluate(() => document.activeElement.getAttribute('href').slice(1));
         await page.keyboard.press('Enter');
-        await page.waitForTimeout(150);
+        // smooth scroll may start late under load: wait for movement, then for 3 stable samples
+        await page.waitForFunction(() => scrollY > 0, null, { timeout: 5000 }).catch(() => {});
+        for (let i = 0, prev = -1, same = 0; i < 80 && same < 3; i += 1) {
+          const y = await page.evaluate(() => scrollY);
+          same = y === prev ? same + 1 : 0;
+          prev = y;
+          await page.waitForTimeout(100);
+        }
         const nav = await page.evaluate(() => ({ id: document.activeElement.id, hid: document.getElementById('mobile-menu').hidden, hash: location.hash, y: scrollY }));
         report(nav.id === target && nav.hid && nav.hash === '' && nav.y > 0, L('menu: Enter on link scrolls, focuses section, closes menu, no hash'), JSON.stringify({ target, ...nav }));
       }
