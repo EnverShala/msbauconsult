@@ -41,6 +41,9 @@ const SEC = ['Content-Security-Policy', 'Strict-Transport-Security', 'X-Content-
 
 const groups = {
   async headers() {
+    // Mirror test: serve.mjs --prod re-implements the .htaccess rules in Node. Apache itself
+    // (Header onsuccess dedup, ErrorDocument, real brotli/deflate) is only checked live (LAUNCH-CHECKLIST).
+    console.log('INFO headers: checks run against the serve.mjs mirror of .htaccess, not Apache');
     const expected = htaccessHeaders(root);
     report(sameSet(Object.keys(expected), SEC), 'headers: .htaccess defines exactly the 7 security headers', Object.keys(expected).join(','));
 
@@ -75,6 +78,10 @@ const groups = {
         ['/favicon.svg', 200, 'public, max-age=604800', 'favicon.svg'],
         ['/robots.txt', 200, 'no-cache', 'robots.txt'],
         ['/does-not-exist', 404, null, null],
+        // RedirectMatch 404 of .htaccess (dev files exist on disk, must not be served)
+        ['/tools/serve.mjs', 404, 'no-cache', null],
+        ['/src/input.css', 404, 'no-cache', null],
+        ['/README.md', 404, 'no-cache', null],
       ];
       for (const [url, status, cc, file] of targets) {
         if (!url) continue;

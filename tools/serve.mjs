@@ -94,13 +94,29 @@ export function htaccessHeaders(root) {
   return headers;
 }
 
-// Cache-Control matrix: mirrors the FilesMatch rules in .htaccess (hardencheck verifies both).
-function cacheControl(file) {
+// Cache-Control, also read from .htaccess: the directory-level "Header set Cache-Control" is the
+// fallback, the FilesMatch blocks override it in file order (later match wins, as in Apache).
+// hardencheck asserts the resulting values against its own expected matrix (the spec).
+export function htaccessCache(root) {
+  const text = fs.readFileSync(path.join(path.resolve(root), '.htaccess'), 'utf8');
+  const blockRe = /<FilesMatch\s+"([^"]+)">\s*Header\s+set\s+Cache-Control\s+"([^"]*)"\s*<\/FilesMatch>/g;
+  const rules = [...text.matchAll(blockRe)].map((m) => ({ re: new RegExp(m[1]), value: m[2] }));
+  const fallback = text.replace(blockRe, '').match(/^\s*Header\s+set\s+Cache-Control\s+"([^"]*)"\s*$/m)?.[1];
+  if (!fallback || rules.length === 0) throw new Error('.htaccess: Cache-Control rules not found');
+  return { fallback, rules };
+}
+
+// "RedirectMatch 404" patterns of .htaccess (dev paths are not served in prod mode either)
+export function htaccessBlocked(root) {
+  const text = fs.readFileSync(path.join(path.resolve(root), '.htaccess'), 'utf8');
+  return [...text.matchAll(/^\s*RedirectMatch\s+404\s+"([^"]+)"\s*$/gm)].map((m) => new RegExp(m[1]));
+}
+
+function cacheControl(cache, file) {
   const base = path.basename(file);
-  if (base === 'favicon.svg') return 'public, max-age=604800';
-  if (/\.(css|js)$/.test(base)) return 'public, max-age=31536000, immutable';
-  if (/\.(woff2|avif|webp|jpe?g|png)$/.test(base)) return 'public, max-age=2592000';
-  return 'no-cache';
+  let value = cache.fallback;
+  for (const r of cache.rules) if (r.re.test(base)) value = r.value;
+  return value;
 }
 
 const COMPRESSIBLE = new Set(['html', 'css', 'js', 'mjs', 'svg', 'json', 'xml', 'txt']);
@@ -109,6 +125,8 @@ export function startServer(rootDir, { mockMail = false, prod = false, port = 0 
   const root = path.resolve(rootDir);
   const state = { count: 0, mails: [] };
   const secHeaders = prod ? htaccessHeaders(root) : {};
+  const cache = prod ? htaccessCache(root) : null;
+  const blocked = prod ? htaccessBlocked(root) : [];
   const server = http.createServer((req, res) => {
     // Prod: every response (also 4xx) carries the .htaccess headers, like "Header always set"
     for (const [k, v] of Object.entries(secHeaders)) res.setHeader(k, v);
@@ -121,6 +139,10 @@ export function startServer(rootDir, { mockMail = false, prod = false, port = 0 
     }
     if (pathname.includes('\0')) {
       res.writeHead(400).end('Bad request');
+      return;
+    }
+    if (blocked.some((re) => re.test(pathname))) {
+      res.writeHead(404, { 'Cache-Control': cache.fallback }).end('Not found');
       return;
     }
     if (pathname === '/') pathname = '/index.html';
@@ -157,7 +179,7 @@ export function startServer(rootDir, { mockMail = false, prod = false, port = 0 
       }
       fs.readFile(file, (rerr, buf) => {
         if (rerr) { res.writeHead(404).end('Not found'); return; }
-        const headers = { 'Content-Type': type, 'Cache-Control': cacheControl(file) };
+        const headers = { 'Content-Type': type, 'Cache-Control': cacheControl(cache, file) };
         if (COMPRESSIBLE.has(ext)) {
           const ae = String(req.headers['accept-encoding'] || '');
           headers.Vary = 'Accept-Encoding';
