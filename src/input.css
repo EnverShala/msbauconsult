@@ -129,35 +129,21 @@
             linear-gradient(to bottom, rgba(212, 175, 55, 0.06) 1px, transparent 1px);
     }
 
-    /* Optional: Hero-Raster driftet langsam (Klasse grid-drift am Hero ergänzen, siehe README).
-       Raster liegt auf einem ::before und wird per transform verschoben → nur Compositor, kein Repaint. */
-    .architectural-grid-light.grid-drift { background-image: none; }
-    .architectural-grid-light.grid-drift::before {
-        content: "";
-        position: absolute;
-        inset: -50px 0 0 -50px;
-        z-index: 1; /* über den Verlaufs-Overlays (z-0), unter dem Inhalt (z-10) */
-        background-size: 50px 50px;
-        background-image:
-            linear-gradient(to right, rgba(197, 155, 39, 0.16) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(197, 155, 39, 0.16) 1px, transparent 1px);
-        /* hinter dem Text ausblenden, rechts (Porträt) und zu den Rändern sichtbar */
-        -webkit-mask-image: radial-gradient(ellipse 70% 80% at 72% 45%, #000 0%, rgba(0,0,0,.55) 45%, transparent 85%);
-                mask-image: radial-gradient(ellipse 70% 80% at 72% 45%, #000 0%, rgba(0,0,0,.55) 45%, transparent 85%);
-        animation: grid-drift 6s linear infinite;
-        will-change: transform;
-        pointer-events: none;
-    }
-    @keyframes grid-drift { to { transform: translate3d(50px, 50px, 0); } }
 
-    #particles-canvas {
-        position: fixed;
-        top: 0;
-        left: 0;
+    /* Hero: Knoten-Netz (main.js) über den Verlaufs-Overlays (z-0), unter dem Inhalt (z-10) */
+    #hero-canvas {
+        position: absolute;
+        inset: 0;
         width: 100%;
         height: 100%;
         pointer-events: none;
-        z-index: 0;
+        z-index: 1;
+        opacity: .45;
+        /* Blueprint-Raster direkt auf der Ebene, damit es über den Verläufen sichtbar bleibt */
+        background-size: 50px 50px;
+        background-image:
+            linear-gradient(to right, rgba(197, 155, 39, 0.22) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(197, 155, 39, 0.22) 1px, transparent 1px);
     }
 
 /* Spotlight-Karten (ersetzt das frühere Inline-Style, CSP) */
@@ -190,7 +176,6 @@ body:has(dialog[open]){overflow:hidden}
   .shimmer-text-light{animation:none;background-position:50% 0}
   .border-beam-container::before{animation:none}
   .btn-primary:hover{transform:none}
-  .architectural-grid-light.grid-drift::before{animation:none}
 }
 
 /* Kontaktformular: Statusmeldung und Feldzustände (data-state, kein JS-generiertes Tailwind) */

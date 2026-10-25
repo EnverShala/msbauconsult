@@ -16,7 +16,7 @@ if (!pagePath) {
 const root = path.resolve(import.meta.dirname, '..');
 const BASELINE = path.join(root, '.planning/phases/02-inhalte-neue-sektionen/baseline/styles.json');
 const FREEZE_CSS =
-  '*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}#particles-canvas{display:none!important}html{scroll-behavior:auto!important}';
+  '*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}#hero-canvas{visibility:hidden!important}html{scroll-behavior:auto!important}';
 
 const BTN = ['paddingTop', 'paddingLeft', 'borderTopColor', 'borderTopWidth', 'borderTopLeftRadius', 'boxShadow', 'color', 'backgroundColor', 'fontWeight'];
 // Deliberate omissions (intentional design changes): hero badge text color (gold-700),

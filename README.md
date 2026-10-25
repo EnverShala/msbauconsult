@@ -135,7 +135,6 @@ Hinweise:
 
 Standard ist der Hero ohne Foto. Zum Aktivieren den HTML-Kommentar um den `<picture>`-Block im Hero von `index.html` entfernen, danach `sh build.sh`; `tools/dist.sh` nimmt `assets/img/hero/` dann automatisch mit auf. Der Vergleich liegt in `preview/hero-ohne.png` und `preview/hero-mit.png`.
 
-Optional: langsam driftendes Hero-Raster (nur CSS, `transform`-Animation, aus bei „Bewegung reduzieren“). Zum Aktivieren an der Hero-`<section id="top">` die Klasse `grid-drift` ergänzen, danach `sh build.sh`. Vorschau: `preview/hero-raster-animiert.html` (lokal über `node tools/serve.mjs` aufrufen).
 
 ## Bekannte Einschränkungen
 

@@ -10,54 +10,82 @@
         });
     });
 
-    // Partikel-Hintergrund (pausiert bei verstecktem Tab, statisch bei reduzierter Bewegung)
-    const canvas = document.getElementById('particles-canvas');
+    // Hero-Hintergrund: Netz aus Gold-Knoten mit Verbindungslinien, Knoten weichen der Maus aus.
+    // Läuft nur, solange der Hero sichtbar und der Tab aktiv ist; bei reduzierter Bewegung ein statisches Bild.
+    const hero = document.getElementById('top');
+    const canvas = document.getElementById('hero-canvas');
     const ctx = canvas.getContext('2d');
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const particles = [];
-    let raf = 0;
+    const LINK = 160, REPEL = 150;
+    const nodes = [];
+    const mouse = { x: -1e4, y: -1e4 };
+    let w = 0, h = 0, raf = 0, inView = true;
 
-    class Particle {
-        constructor() {
-            this.x = Math.random() * canvas.width;
-            this.y = Math.random() * canvas.height;
-            this.size = Math.random() * 1.5 + 0.5;
-            this.speedX = (Math.random() - 0.5) * 0.3;
-            this.speedY = (Math.random() - 0.5) * 0.3;
-            this.opacity = Math.random() * 0.4 + 0.1;
+    function resizeCanvas() {
+        const r = canvas.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        w = r.width;
+        h = r.height;
+        canvas.width = Math.round(w * dpr);
+        canvas.height = Math.round(h * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const count = Math.round(Math.min(45, Math.max(16, (w * h) / 28800)));
+        while (nodes.length < count) {
+            nodes.push({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                vx: (Math.random() - 0.5) * 0.8,
+                vy: (Math.random() - 0.5) * 0.8,
+                r: Math.random() * 2 + 1.5
+            });
         }
-        update() {
-            this.x += this.speedX;
-            this.y += this.speedY;
-            if (this.x < 0) { this.x = 0; this.speedX = Math.abs(this.speedX); }
-            else if (this.x > canvas.width) { this.x = canvas.width; this.speedX = -Math.abs(this.speedX); }
-            if (this.y < 0) { this.y = 0; this.speedY = Math.abs(this.speedY); }
-            else if (this.y > canvas.height) { this.y = canvas.height; this.speedY = -Math.abs(this.speedY); }
-        }
-        draw() {
-            ctx.fillStyle = `rgba(197, 155, 39, ${this.opacity})`;
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-            ctx.fill();
-        }
+        nodes.length = count;
+        nodes.forEach(n => { n.x = Math.min(n.x, w); n.y = Math.min(n.y, h); });
+        if (reduceMotion.matches) draw(false);
     }
 
-    function drawFrame() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        particles.forEach(p => p.draw());
+    function draw(move) {
+        ctx.clearRect(0, 0, w, h);
+        for (let i = 0; i < nodes.length; i++) {
+            const n = nodes[i];
+            if (move) {
+                n.x += n.vx;
+                n.y += n.vy;
+                if (n.x < 0 || n.x > w) n.vx *= -1;
+                if (n.y < 0 || n.y > h) n.vy *= -1;
+                const dx = mouse.x - n.x, dy = mouse.y - n.y;
+                const d = Math.sqrt(dx * dx + dy * dy);
+                if (d < REPEL && d > 0) {
+                    n.x -= (dx / d) * 1.5;
+                    n.y -= (dy / d) * 1.5;
+                }
+            }
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+            ctx.fillStyle = '#C59B27';
+            ctx.fill();
+            for (let j = i + 1; j < nodes.length; j++) {
+                const m = nodes[j];
+                const d = Math.sqrt((n.x - m.x) ** 2 + (n.y - m.y) ** 2);
+                if (d < LINK) {
+                    ctx.beginPath();
+                    ctx.moveTo(n.x, n.y);
+                    ctx.lineTo(m.x, m.y);
+                    ctx.strokeStyle = `rgba(197, 155, 39, ${1 - d / LINK})`;
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                }
+            }
+        }
     }
 
     function tick() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        particles.forEach(p => {
-            p.update();
-            p.draw();
-        });
+        draw(true);
         raf = requestAnimationFrame(tick);
     }
 
     function start() {
-        if (!raf && !document.hidden && !reduceMotion.matches) raf = requestAnimationFrame(tick);
+        if (!raf && inView && !document.hidden && !reduceMotion.matches) raf = requestAnimationFrame(tick);
     }
 
     function stop() {
@@ -65,22 +93,24 @@
         raf = 0;
     }
 
-    function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        particles.forEach(p => {
-            p.x = Math.min(p.x, canvas.width);
-            p.y = Math.min(p.y, canvas.height);
-        });
-        if (reduceMotion.matches) drawFrame();
-    }
-
+    hero.addEventListener('pointermove', e => {
+        const r = canvas.getBoundingClientRect();
+        mouse.x = e.clientX - r.left;
+        mouse.y = e.clientY - r.top;
+    }, { passive: true });
+    hero.addEventListener('pointerleave', () => { mouse.x = mouse.y = -1e4; });
     window.addEventListener('resize', resizeCanvas);
     document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+    if ('IntersectionObserver' in window) {
+        new IntersectionObserver(([e]) => {
+            inView = e.isIntersecting;
+            inView ? start() : stop();
+        }).observe(hero);
+    }
     const onMotionChange = () => {
         if (reduceMotion.matches) {
             stop();
-            drawFrame();
+            draw(false);
         } else {
             start();
         }
@@ -88,13 +118,10 @@
     if (reduceMotion.addEventListener) reduceMotion.addEventListener('change', onMotionChange);
     else if (reduceMotion.addListener) reduceMotion.addListener(onMotionChange);
 
-    // Setup im ersten Frame: vermeidet erzwungenen Reflow (innerWidth) im Script-Task, schont TBT
+    // Setup im ersten Frame: vermeidet erzwungenen Reflow im Script-Task, schont TBT
     requestAnimationFrame(() => {
         resizeCanvas();
-        for (let i = 0; i < 40; i++) {
-            particles.push(new Particle());
-        }
-        if (reduceMotion.matches) drawFrame();
+        if (reduceMotion.matches) draw(false);
         else start();
     });
 

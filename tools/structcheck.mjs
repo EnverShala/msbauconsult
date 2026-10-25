@@ -29,7 +29,7 @@ check('lang', /<html[^>]*\slang="de"/.test(body));
 check('landmarks', ['<h1', '<main', '<header', '<footer'].every((t) => count(new RegExp(t + '[\\s>]', 'g')) === 1) && /<main[^>]*\sid="main"/.test(body));
 const skip = body.indexOf('<a href="#main"');
 check('skip-link', skip >= 0 && skip < body.indexOf('<header'));
-check('canvas-hidden', /<canvas id="particles-canvas"[^>]*aria-hidden="true"/.test(body) || /<canvas[^>]*aria-hidden="true"[^>]*id="particles-canvas"/.test(body));
+check('canvas-hidden', /<canvas id="hero-canvas" aria-hidden="true">/.test(body));
 const need = ['top', 'about', 'services', 'waermepumpe', 'contact', 'main', 'contact-form'];
 check('required-ids', need.every((i) => ids.has(i)), 'missing: ' + need.filter((i) => !ids.has(i)).join(','));
 const hrefs = [...body.matchAll(/href="#([^"]*)"/g)].map((m) => m[1]);
