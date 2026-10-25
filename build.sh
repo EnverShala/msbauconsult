@@ -71,7 +71,7 @@ case " $* " in *" --watch "*) exit 0 ;; esac
 CSS_V=$(hash_of assets/css/main.css | cut -c1-8)
 JS_V=$(hash_of assets/js/main.js | cut -c1-8)
 sed -i.bak -E \
-  -e "s#/assets/css/main\.css(\?v=[0-9a-f]{8})?\"#/assets/css/main.css?v=$CSS_V\"#" \
-  -e "s#/assets/js/main\.js(\?v=[0-9a-f]{8})?\"#/assets/js/main.js?v=$JS_V\"#" \
+  -e "s#/assets/css/main\.css(\?v=[0-9a-f]{8})?\"#/assets/css/main.css?v=$CSS_V\"#g" \
+  -e "s#/assets/js/main\.js(\?v=[0-9a-f]{8})?\"#/assets/js/main.js?v=$JS_V\"#g" \
   index.html
 rm -f index.html.bak

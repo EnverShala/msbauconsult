@@ -114,12 +114,23 @@ version_static() {
 hash_of_file() { if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | cut -d' ' -f1; else shasum -a 256 "$1" | cut -d' ' -f1; fi; }
 check static-version version_static
 
-# 5d. build.ps1 stempelt byte-identisch zu build.sh (PSModulePath leeren: Git-Bash erbt sonst den PowerShell-7-Pfad)
+# 5d. build.ps1 stempelt byte-identisch zu build.sh (PSModulePath leeren: Git-Bash erbt sonst den PowerShell-7-Pfad).
+# Start von einer ungestempelten index.html, sonst bestuende die Pruefung auch ohne jeden PS1-Stempel;
+# index.html wird in jedem Fall aus der build.sh-Fassung wiederhergestellt.
 ps1_parity() {
   mkdir -p tools/out
   cp index.html tools/out/index.sh.html
-  env -u PSModulePath powershell -NoProfile -ExecutionPolicy Bypass -File build.ps1 >/dev/null 2>&1 || return 1
-  cmp -s index.html tools/out/index.sh.html
+  grep -qE 'main\.css\?v=[0-9a-f]{8}"' tools/out/index.sh.html && grep -qE 'main\.js\?v=[0-9a-f]{8}"' tools/out/index.sh.html ||
+    { echo "  index.html: build.sh-Stempel fehlen"; return 1; }
+  sed -E 's#(/assets/(css/main\.css|js/main\.js))\?v=[0-9a-f]{8}"#\1"#g' tools/out/index.sh.html > index.html
+  if grep -qE 'main\.(css|js)\?v=' index.html; then
+    echo "  Entstempeln fehlgeschlagen"; rc=1
+  else
+    env -u PSModulePath powershell -NoProfile -ExecutionPolicy Bypass -File build.ps1 >/dev/null 2>&1; rc=$?
+    cmp -s index.html tools/out/index.sh.html || { echo "  build.ps1-Stempel weicht von build.sh ab"; rc=1; }
+  fi
+  cp tools/out/index.sh.html index.html
+  return $rc
 }
 if command -v powershell.exe >/dev/null 2>&1 || command -v powershell >/dev/null 2>&1; then
   check build-ps1-parity ps1_parity
