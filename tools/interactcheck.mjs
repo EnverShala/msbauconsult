@@ -504,15 +504,20 @@ const groups = {
     await ctx.close();
   },
   async anchors() {
-    const settle = async (page) => {
+    // Smooth scroll can start late under load: first wait until scrollY left its value before the
+    // action (y0; skipped when no movement is expected), then until it is unchanged for 3 samples.
+    const settle = async (page, y0 = null) => {
+      if (y0 !== null) await page.waitForFunction((y) => window.scrollY !== y, y0, { timeout: 5000 }).catch(() => {});
       let prev = -1;
-      for (let i = 0; i < 40; i += 1) {
+      let same = 0;
+      for (let i = 0; i < 80 && same < 3; i += 1) {
         const y = await page.evaluate(() => window.scrollY);
-        if (y === prev) return;
+        same = y === prev ? same + 1 : 0;
         prev = y;
-        await page.waitForTimeout(120);
+        await page.waitForTimeout(100);
       }
     };
+    const scrollY = (page) => page.evaluate(() => window.scrollY);
     const topOf = (page, id) => page.evaluate((i) => document.getElementById(i).getBoundingClientRect().top, id);
     const near = (v, c, tol) => Math.abs(v - c) <= tol;
     const ctx = await newContext();
@@ -525,15 +530,17 @@ const groups = {
     report(await page.evaluate(() => document.getElementById('dlg-impressum').open), 'anchors deep link /#impressum opens dialog');
     await page.keyboard.press('Escape');
     await page.waitForTimeout(550);
+    let y0 = await scrollY(page);
     await page.click('nav a[href="#services"]');
-    await settle(page);
+    await settle(page, y0);
     const href0 = await page.evaluate(() => location.href);
     report(href0 === origin + '/', 'anchors after /#impressum + close + nav click location is origin + "/"', href0);
 
     // Fresh page: nav link
     await page.goto(origin + '/', { waitUntil: 'load' });
+    y0 = await scrollY(page);
     await page.click('nav a[href="#services"]');
-    await settle(page);
+    await settle(page, y0);
     const st = await page.evaluate(() => ({ href: location.href, act: document.activeElement.id }));
     report(st.href === origin + '/', 'anchors nav "Leistungen" leaves no hash', st.href);
     const t1 = await topOf(page, 'services');
@@ -544,15 +551,17 @@ const groups = {
     const card = page.locator('#services a.btn-secondary').first();
     await card.scrollIntoViewIfNeeded();
     const cardHref = await card.getAttribute('href');
+    y0 = await scrollY(page);
     await card.click();
-    await settle(page);
+    await settle(page, y0);
     const st2 = await page.evaluate(() => ({ href: location.href, act: document.activeElement.id }));
     const t2 = await topOf(page, 'contact');
     report(cardHref === '#contact' && st2.href === origin + '/' && st2.act === 'contact' && near(t2, 112, 40), 'anchors card button -> #contact, no hash, focus', JSON.stringify({ cardHref, ...st2, t2 }));
 
     // Brand link from a scrolled position
+    y0 = await scrollY(page);
     await page.click('nav a[href="#top"]');
-    await settle(page);
+    await settle(page, y0);
     const st3 = await page.evaluate(() => ({ y: window.scrollY, href: location.href }));
     report(st3.y < 5 && st3.href === origin + '/', 'anchors brand link scrolls to top, no hash', JSON.stringify(st3));
 
