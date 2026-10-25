@@ -1,6 +1,6 @@
 # Launch-Checkliste
 
-Offene Prüfungen vor dem Go-live. Alles hier ist lokal nicht prüfbar (kein PHP, kein Apache, kein Zugriff auf Lizenz und Hoster). Phase 4 ist abgeschlossen (CSP, Sicherheits-Header, Kompression, Caching sind umgesetzt und lokal gegen `serve.mjs --prod` geprüft); alles unten ist nur live prüfbar.
+Offene Prüfungen vor dem Go-live. Lokal geprüft ist nur, was ohne Apache, Hoster und heizreport-Lizenz geht (CSP, Sicherheits-Header, Kompression und Caching gegen den Nachbau `serve.mjs --prod`; `sendMail.php` einmalig mit portablem PHP, siehe unten). Die Punkte hier brauchen den Live-Server.
 
 ## Server & .htaccess
 
@@ -41,7 +41,7 @@ Offene Prüfungen vor dem Go-live. Alles hier ist lokal nicht prüfbar (kein PHP
 - [ ] Optional lokal: `node tools/interactcheck.mjs consent --online` (nur Information, kein Pass-Kriterium)
 - [ ] CSP umgesetzt (siehe `.htaccess`) – live prüfen: Widget bis zum Ergebnisschritt durchlaufen, Konsole ohne CSP-Verstöße (Details im Abschnitt „Sicherheits-Header, Kompression, Caching“)
 - [ ] Die zwei Reload-Buttons des Widgets arbeiten mit Inline-`onclick` und funktionieren unter der strikten `script-src` nicht (bekannte kosmetische Einschränkung, Seite neu laden bleibt möglich)
-- [ ] Kein SRI möglich (der Anbieter ändert das Skript); Einwilligung bleibt auf angemeldete Besucher beschränkt
+- [ ] Kein SRI möglich (der Anbieter ändert das Skript); die Einwilligung gilt nur für den aktuellen Seitenaufruf, gespeichert wird nichts
 
 ## Sicherheits-Header, Kompression, Caching (Phase 4)
 
@@ -73,6 +73,6 @@ Offene Prüfungen vor dem Go-live. Alles hier ist lokal nicht prüfbar (kein PHP
 
 ## Bekannte Einschränkungen
 
-- [ ] Ohne JavaScript zeigen `/impressum` und `/datenschutz` die Startseite ohne Rechtstext; entscheiden, ob das akzeptabel ist (sonst serverseitige Alternative in Phase 4)
+- [ ] Ohne JavaScript zeigen `/impressum` und `/datenschutz` die Startseite ohne Rechtstext; entscheiden, ob das akzeptabel ist (sonst serverseitige Alternative in einem späteren Meilenstein)
 - [ ] Annahme A1: Chrome unter Android schließt den Rechtsdialog per Zurück-Geste nativ (sonst verlässt die Geste die Seite); mit einem echten Gerät bestätigen
 - [ ] Das mobile Menü braucht JavaScript (unter 1024 px)
