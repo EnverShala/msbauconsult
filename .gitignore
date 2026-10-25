@@ -4,3 +4,10 @@ tailwindcss
 tailwindcss.exe
 *.log
 dist/
+
+# Intern / nicht öffentlich
+.planning/
+CLAUDE.md
+.claude/
+screenshots/
+tools/assets-src/
