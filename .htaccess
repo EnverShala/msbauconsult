@@ -67,12 +67,9 @@ ErrorDocument 404 /index.html
     # HSTS ohne includeSubDomains: unbekannte Subdomains des Hosters (webmail., autodiscover. ...) ohne TLS
     # wuerden sonst ein Jahr gesperrt. Erstdeploy mit max-age=300 testen, dann 31536000 (LAUNCH-CHECKLIST).
     Header always set Strict-Transport-Security "max-age=31536000"
-    # sendMail.php setzt diese drei Header selbst (Fallback ohne .htaccess): Duplikate vermeiden
-    Header onsuccess unset X-Content-Type-Options
+    # Gilt auch fuer sendMail.php (setzt selbst keine dieser Header, daher keine Duplikate)
     Header always set X-Content-Type-Options "nosniff"
-    Header onsuccess unset X-Frame-Options
     Header always set X-Frame-Options "DENY"
-    Header onsuccess unset Referrer-Policy
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
     Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
     Header always set Cross-Origin-Opener-Policy "same-origin"

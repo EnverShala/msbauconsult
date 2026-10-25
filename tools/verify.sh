@@ -53,7 +53,8 @@ headers_static() {
   grep -qF '<FilesMatch "\.(css|js)$">' .htaccess || { echo "  .htaccess: FilesMatch css|js fehlt"; rc=1; }
   [ "$(grep -c 'immutable"' .htaccess)" -eq 1 ] || { echo "  .htaccess: immutable nicht genau einmal"; rc=1; }
   grep -qF 'Header set Cache-Control "public, max-age=2592000"' .htaccess || { echo "  .htaccess: 30-Tage-Regel fehlt"; rc=1; }
-  [ "$(grep -c 'Header onsuccess unset' .htaccess)" -eq 3 ] || { echo "  .htaccess: Header onsuccess unset != 3"; rc=1; }
+  # Security-Header nur aus .htaccess: sendMail.php setzt keine eigenen (keine Duplikate)
+  ! grep -qiE "header\('(X-Content-Type-Options|X-Frame-Options|Referrer-Policy|Content-Security-Policy|Strict-Transport-Security)" sendMail.php || { echo "  sendMail.php: setzt Security-Header selbst"; rc=1; }
   bad=$(grep -v '^ *#' .htaccess | grep -E 'data:|unsafe-eval|preload|interest-cohort|includeSubDomains|Cross-Origin-Embedder-Policy|Cross-Origin-Resource-Policy' || true)
   [ -z "$bad" ] || { echo "  .htaccess: verbotene Direktive: $bad"; rc=1; }
   return $rc

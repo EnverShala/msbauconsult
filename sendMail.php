@@ -103,10 +103,8 @@ function sweepRateLimitFiles(int $window): void {
     }
 }
 
-// --- Security headers ---
-header('X-Content-Type-Options: nosniff');
-header('X-Frame-Options: DENY');
-header('Referrer-Policy: strict-origin-when-cross-origin');
+// Security headers (nosniff, X-Frame-Options, Referrer-Policy, CSP ...) come from .htaccess
+// ("Header always set" covers this script too), so they are not duplicated here.
 
 // --- CORS: restrict to own domain ---
 $allowedOrigins = ['https://www.ms-bauconsult.de', 'https://ms-bauconsult.de'];
